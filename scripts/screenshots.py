@@ -22,7 +22,7 @@ from playwright.async_api import async_playwright
 ROOT = Path(__file__).resolve().parents[1]
 ICONS = [
     "mdiRobotVacuum", "mdiToilet", "mdiShower", "mdiSilverwareForkKnife", "mdiStove", "mdiBed", "mdiDoor",
-    "mdiShoePrint", "mdiSofa", "mdiLightningBolt", "mdiSquareRoundedOutline", "mdiDesk",
+    "mdiShoePrint", "mdiSofa", "mdiLightningBolt", "mdiSquareRoundedOutline", "mdiDesk", "mdiFullscreen", "mdiClose",
 ]  # fmt: skip
 
 
@@ -37,11 +37,20 @@ def _icons() -> str:
 
 async def _shoot(port: int) -> None:
     async with async_playwright() as p:
-        browser = await p.chromium.launch()
+        # WebGL without a GPU, for the 3D view
+        browser = await p.chromium.launch(
+            args=["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"]
+        )
         page = await browser.new_page(viewport={"width": 552, "height": 700}, device_scale_factor=2)
-        for theme, name in (("light", "map.png"), ("dark", "map-dark.png")):
-            await page.goto(f"http://localhost:{port}/index.html?theme={theme}")
-            await page.wait_for_timeout(1500)  # the robot travels its last segment
+        shots = (
+            ("light", "2d", "map.png"),
+            ("dark", "2d", "map-dark.png"),
+            ("light", "3d", "map-3d.png"),
+            ("dark", "3d", "map-3d-dark.png"),
+        )
+        for theme, view, name in shots:
+            await page.goto(f"http://localhost:{port}/index.html?theme={theme}&view={view}")
+            await page.wait_for_timeout(3000)  # the robot travels its last segment, three.js loads
             await (await page.query_selector("#host")).screenshot(path=ROOT / "screenshots" / name)
         await browser.close()
 
@@ -52,6 +61,11 @@ def main() -> None:
         site = Path(tmp)
         shutil.copy(ROOT / "scripts" / "harness" / "index.html", site)
         shutil.copy(ROOT / "custom_components" / "vacuum_map" / "frontend" / "vacuum-map-card.js", site)
+        (site / "vacuum_map" / "vendor").mkdir(parents=True)
+        shutil.copy(
+            ROOT / "custom_components" / "vacuum_map" / "frontend" / "vendor" / "three.min.js",
+            site / "vacuum_map" / "vendor",
+        )
         (site / "icons.js").write_text(_icons())
         (site / "demo.json").write_text(json.dumps(payload()))
         handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=tmp)

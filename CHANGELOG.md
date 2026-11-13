@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.0 - 2026-11-13
+
+### Improvements
+- Strips the vacuum saw through a window and labelled as a room (a balcony beyond the living room, a terrace beyond the kitchen) are cut: a part of a room narrower than about 65 cm that touches no other room goes, and the wall follows the cut. Corridors and passages, next to other rooms, stay.
+
+### Fixes
+- 3D view: a shape three.js cannot build is left out (and logged in the browser console) instead of leaving the whole map empty but for the path and the robot.
+
 ## 1.2.0 - 2026-11-13
 
 ### Improvements

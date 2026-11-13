@@ -110,3 +110,24 @@ def test_digest_ignores_scanned_pixels() -> None:
     outside = [[0xFF, 0x07, room(3)]]
     scanned = [[0x07, 0xFF, room(3)]]
     assert parse_grid(raw_map(outside)).digest == parse_grid(raw_map(scanned)).digest
+
+
+def test_strip_seen_through_a_window_is_cut_corridor_kept() -> None:
+    rows = [[0] * 60 for _ in range(40)]
+    for y in range(5, 25):
+        for x in range(5, 25):
+            rows[y][x] = room(1)
+        for x in range(30, 55):
+            rows[y][x] = room(2)
+    for y in range(25, 38):  # a 6 px (30 cm) strip of room 1 going out through a window, touching nothing
+        for x in range(12, 18):
+            rows[y][x] = room(1)
+    for y in range(25, 35):  # a 10 px (50 cm) corridor of room 2 running along room 1, behind a 2 px wall
+        for x in range(30, 40):
+            rows[y][x] = room(2)
+        for x in range(20, 28):
+            rows[y][x] = room(1)
+    geometry = vectorize(parse_grid(raw_map(rows)))
+    strip = [ring for ring in geometry.rooms[1] if max(ring[1::2]) > 36]
+    assert not strip  # the strip is gone
+    assert _bounds(geometry.rooms[2])[3] >= 34  # the corridor stays

@@ -94,7 +94,12 @@ class LivePoller:
         if trait is None or not hasattr(trait, "refresh"):
             return
         was_cleaning = is_cleaning(coordinator)
+        # First reading one interval after the subscription: never before the card got its answer and its map
+        pause = self.interval
         while self._listeners.get(key):
+            await asyncio.sleep(pause)
+            if not self._listeners.get(key):
+                break
             started = time.monotonic()
             cleaning = is_cleaning(coordinator)
             if cleaning and is_local(coordinator):
@@ -107,7 +112,7 @@ class LivePoller:
                     if await self._read("position", trait.refresh) and trait.raw_api_response is not before:
                         self._notify(key)
             was_cleaning = cleaning
-            pause = self.interval if cleaning else max(self.interval, IDLE_INTERVAL)
-            await asyncio.sleep(max(0.0, pause - (time.monotonic() - started)))
+            wanted = self.interval if cleaning else max(self.interval, IDLE_INTERVAL)
+            pause = max(0.0, wanted - (time.monotonic() - started))
         self._listeners.pop(key, None)
         self._tasks.pop(key, None)

@@ -1,7 +1,7 @@
 // Vacuum Map card: a clean, live map of a Roborock vacuum, drawn from the vectors the vacuum_map integration sends.
 // Vanilla JS, no dependency. Served by the integration at /vacuum_map/vacuum-map-card.js.
 
-const VACUUM_MAP_CARD_VERSION = '1.1.1';
+const VACUUM_MAP_CARD_VERSION = '1.2.0';
 
 const VM_STRINGS = {
   en: { loading: 'Loading the map…', no_map: 'No map for this vacuum yet', not_set_up: 'Set up the Vacuum Map integration first', no_entity: 'Choose a vacuum', e_entity: 'Vacuum', e_title: 'Title', e_rotation: 'Rotation', e_labels: 'Room names', e_path: 'Path', e_zones: 'No-go zones', e_obstacles: 'Obstacles', fullscreen: 'Full screen', close: 'Close', e_view: 'View', e_view_toggle: '2D / 3D button', e_fullscreen: 'Full screen button' },
@@ -262,9 +262,6 @@ class VmScene {
     const floorColor = new T.Color(theme.dark ? '#3a404c' : '#d9dde4');
     const floor = this._slab(geometry.floor, 0, new T.MeshStandardMaterial({ color: floorColor, roughness: 0.95 }));
     if (floor) this.fixed.add(floor);
-    // Blocked areas (furniture, places out of reach): flat, a little darker than the floor
-    const blocked = this._slab(geometry.blocked || [], 0, new T.MeshStandardMaterial({ color: floorColor.clone().multiplyScalar(0.8), roughness: 0.95 }));
-    if (blocked) this.fixed.add(blocked);
     geometry.rooms.forEach((room, i) => {
       const style = this.card._roomStyle(room, i);
       const material = new T.MeshStandardMaterial({ color: style.color, roughness: 0.85 });
@@ -750,7 +747,7 @@ class VacuumMapCard extends HTMLElement {
     let maxX = -Infinity;
     let maxY = -Infinity;
     const g = this._geometry;
-    const rings = [...g.walls, ...g.floor, ...(g.blocked || []), ...g.rooms.flatMap((r) => r.rings)];
+    const rings = [...g.walls, ...g.floor, ...g.rooms.flatMap((r) => r.rings)];
     for (const ring of rings) {
       for (let i = 0; i < ring.length; i += 2) {
         const [x, y] = this._tp(ring[i], ring[i + 1]);
@@ -899,11 +896,9 @@ class VacuumMapCard extends HTMLElement {
       .join('');
     const floor = g.floor.map((ring) => this._ringPath(ring)).join('');
     const walls = g.walls.map((ring) => this._ringPath(ring)).join('');
-    const blocked = (g.blocked || []).map((ring) => this._ringPath(ring)).join('');
     body.innerHTML = `<div class="map" style="aspect-ratio:${vw.toFixed(1)} / ${vh.toFixed(1)};width:min(100%, calc(${this._config.max_height || '70vh'} * ${(vw / vh).toFixed(4)}))">
       <svg viewBox="${vx.toFixed(1)} ${vy.toFixed(1)} ${vw.toFixed(1)} ${vh.toFixed(1)}" preserveAspectRatio="xMidYMid meet">
         <path d="${floor}" fill="var(--secondary-text-color)" fill-opacity="0.16" fill-rule="evenodd"></path>
-        <path d="${blocked}" fill="var(--secondary-text-color)" fill-opacity="0.1" fill-rule="evenodd"></path>
         <g class="rooms">${roomPaths}</g>
         <g class="zones"></g>
         <g class="path" fill="none" stroke="var(--primary-text-color)" stroke-opacity="0.45" stroke-width="0.45" stroke-linejoin="round" stroke-linecap="round">

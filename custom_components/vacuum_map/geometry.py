@@ -31,9 +31,15 @@ BLOCK_IMAGE = 2
 MM_PER_PIXEL = 50
 # Vertices closer than this to the simplified line are dropped (pixels)
 SIMPLIFY_TOLERANCE = 0.9
-# Wall shapes thicker than this on average (pixels) are blocked areas (furniture, places the robot cannot reach),
-# not walls: a wall of the map is one or two pixels thick
-MAX_WALL_THICKNESS = 3.0
+# Cleaning of the map before tracing it (pixels, 1 px = 5 cm):
+# - non-room areas enclosed by a single room up to this size (10 m²) are furniture and specks: they become that room
+MAX_ISLAND = 4000
+# - gaps up to this width between two parts of the same room (furniture legs, notches) are filled
+MAX_GAP = 5
+# - and what has the same room on three sides within this distance (2 m): furniture against a wall
+MAX_REACH = 40
+# - walls are drawn as a band of this width around the rooms, whatever the vacuum saw beyond them (through windows)
+WALL_BAND = 2
 # Rings smaller than this are noise (pixels², 1 px² = 25 cm²): furniture legs, specks, the holes they leave in rooms
 MIN_RING_AREA = 8.0
 
@@ -65,7 +71,6 @@ class Geometry:
     areas: dict[int, float] = field(default_factory=dict)
     floor: list[list[float]] = field(default_factory=list)
     walls: list[list[float]] = field(default_factory=list)
-    blocked: list[list[float]] = field(default_factory=list)
     digest: str = ""
 
 
@@ -206,9 +211,113 @@ def simplify(ring: list[tuple[int, int]], tolerance: float = SIMPLIFY_TOLERANCE)
     return [round(value, 1) for point in points for value in point]
 
 
+def _nearest_rooms(labels: list[int], width: int, height: int) -> list[list[tuple[int, int]]]:
+    """For each pixel, the nearest room pixel to its left, right, top and bottom: (room, distance) or (0, 0)."""
+    size = len(labels)
+    out = [[(0, 0)] * size for _ in range(4)]
+    lines = [(range(y * width, (y + 1) * width), 0, 1) for y in range(height)] + [
+        (range(x, size, width), 2, 3) for x in range(width)
+    ]
+    for line, before, after in lines:
+        for target, order in ((out[before], line), (out[after], reversed(line))):
+            room, distance = 0, 0
+            for i in order:
+                if labels[i] > 0:
+                    room, distance = labels[i], 0
+                else:
+                    distance += 1
+                    target[i] = (room, distance) if room else (0, 0)
+    return out
+
+
+def _fill_gaps(labels: list[int], width: int, height: int) -> None:
+    """Non-room pixels that belong to a room: the same room on both sides within MAX_GAP (furniture legs, notches),
+    or the same room on three sides within MAX_REACH (furniture against a wall, kitchen units)."""
+    left, right, up, down = _nearest_rooms(labels, width, height)
+    filled = []
+    for i, value in enumerate(labels):
+        if value > 0:
+            continue
+        sides = (left[i], right[i], up[i], down[i])
+        room = 0
+        for a, b in ((sides[0], sides[1]), (sides[2], sides[3])):
+            if a[0] and a[0] == b[0] and a[1] + b[1] - 1 <= MAX_GAP:
+                room = a[0]
+        if not room:
+            near = [r for r, d in sides if r and d <= MAX_REACH]
+            room = next((r for r in set(near) if near.count(r) >= 3), 0)
+        if room:
+            filled.append((i, room))
+    for i, room in filled:
+        labels[i] = room
+
+
+def _fill_islands(labels: list[int], width: int, height: int) -> None:
+    """Non-room areas enclosed by a single room (furniture, specks, the black spots of the map) become that room."""
+    seen = bytearray(len(labels))
+    for start, value in enumerate(labels):
+        if value > 0 or seen[start]:
+            continue
+        seen[start] = 1
+        stack = [start]
+        component = []
+        rooms: set[int] = set()
+        border = False
+        while stack:
+            i = stack.pop()
+            component.append(i)
+            x, y = i % width, i // width
+            if x in (0, width - 1) or y in (0, height - 1):
+                border = True
+            for j, inside in ((i - 1, x > 0), (i + 1, x < width - 1), (i - width, y > 0), (i + width, y < height - 1)):
+                if not inside:
+                    continue
+                if labels[j] > 0:
+                    rooms.add(labels[j])
+                elif not seen[j]:
+                    seen[j] = 1
+                    stack.append(j)
+        if not border and len(rooms) == 1 and len(component) <= MAX_ISLAND:
+            room = rooms.pop()
+            for i in component:
+                labels[i] = room
+
+
+def _wall_band(labels: list[int], width: int, height: int) -> None:
+    """Walls: the non-room pixels within WALL_BAND of a room. Everything else is left out (what the vacuum saw through
+    windows, unsegmented floor, blocked areas), and there is a wall even where the map has none (a window)."""
+    near = bytearray(1 if value > 0 else 0 for value in labels)
+    band = WALL_BAND
+    # Grow the rooms by WALL_BAND pixels (square neighbourhood): along the rows, then along the columns
+    rows = bytearray(len(near))
+    for y in range(height):
+        row = y * width
+        for x in range(width):
+            if any(near[row + max(0, x - band) : row + min(width, x + band + 1)]):
+                rows[row + x] = 1
+    near = bytearray(len(rows))
+    for x in range(width):
+        column = rows[x::width]
+        for y in range(height):
+            if any(column[max(0, y - band) : y + band + 1]):
+                near[y * width + x] = 1
+    for i, value in enumerate(labels):
+        if value <= 0:
+            labels[i] = WALL if near[i] else OUTSIDE
+
+
+def clean(grid: Grid) -> list[int]:
+    """The labels as the card shows them: rooms without spots, walls as a band around them, nothing else."""
+    labels = list(grid.labels)
+    _fill_gaps(labels, grid.width, grid.height)
+    _fill_islands(labels, grid.width, grid.height)
+    _wall_band(labels, grid.width, grid.height)
+    return labels
+
+
 def vectorize(grid: Grid) -> Geometry:
-    """Polygons of every room, of the floor outside rooms, and of the walls."""
-    width, height, labels = grid.width, grid.height, grid.labels
+    """Polygons of every room and of the walls, from the cleaned labels."""
+    width, height, labels = grid.width, grid.height, clean(grid)
     edges: dict[int, dict[tuple[int, int], list[tuple[int, int]]]] = defaultdict(lambda: defaultdict(list))
     sums: dict[int, list[int]] = defaultdict(lambda: [0, 0, 0])
 
@@ -236,13 +345,12 @@ def vectorize(grid: Grid) -> Geometry:
 
     geometry = Geometry(width, height, digest=grid.digest)
     for label, bucket in edges.items():
-        # Walls keep their detail: a wall is one or two pixels thick
-        tolerance = 0.5 if label == WALL else SIMPLIFY_TOLERANCE
+        tolerance = SIMPLIFY_TOLERANCE
         rings = [ring for raw_ring in _trace(bucket) if (ring := simplify(raw_ring, tolerance))]
         if not rings:
             continue
         if label == WALL:
-            geometry.walls, geometry.blocked = split_walls(rings)
+            geometry.walls = rings
         elif label == FLOOR:
             geometry.floor = rings
         else:
@@ -251,50 +359,6 @@ def vectorize(grid: Grid) -> Geometry:
             geometry.areas[label] = round(count * (MM_PER_PIXEL / 1000) ** 2, 1)
             geometry.centers[label] = _label_point(labels, width, label, sx / count, sy / count)
     return geometry
-
-
-def _signed_area(flat: list[float]) -> float:
-    total = 0.0
-    count = len(flat)
-    for i in range(0, count, 2):
-        j = (i + 2) % count
-        total += flat[i] * flat[j + 1] - flat[j] * flat[i + 1]
-    return total / 2
-
-
-def _perimeter(flat: list[float]) -> float:
-    count = len(flat)
-    return sum(math.dist(flat[i : i + 2], flat[(i + 2) % count : (i + 2) % count + 2]) for i in range(0, count, 2))
-
-
-def _inside(flat: list[float], x: float, y: float) -> bool:
-    inside = False
-    count = len(flat)
-    for i in range(0, count, 2):
-        j = (i - 2) % count
-        xi, yi, xj, yj = flat[i], flat[i + 1], flat[j], flat[j + 1]
-        if (yi > y) != (yj > y) and x < (xj - xi) * (y - yi) / (yj - yi) + xi:
-            inside = not inside
-    return inside
-
-
-def split_walls(rings: list[list[float]]) -> tuple[list[list[float]], list[list[float]]]:
-    """Thin shapes (walls) and thick ones (blocked areas), each shape being an outer ring with its holes.
-
-    Rings are traced with the inside on their right: outer rings have a positive area (y down), holes a negative one.
-    """
-    shapes = [[ring] for ring in rings if _signed_area(ring) > 0]
-    for hole in (ring for ring in rings if _signed_area(ring) <= 0):
-        owners = [shape for shape in shapes if _inside(shape[0], hole[0], hole[1])]
-        if owners:
-            min(owners, key=lambda shape: _signed_area(shape[0])).append(hole)
-    walls: list[list[float]] = []
-    blocked: list[list[float]] = []
-    for shape in shapes:
-        area = sum(_signed_area(ring) for ring in shape)
-        thickness = 2 * area / (sum(_perimeter(ring) for ring in shape) or 1)
-        (blocked if thickness > MAX_WALL_THICKNESS else walls).extend(shape)
-    return walls, blocked
 
 
 def _label_point(labels: list[int], width: int, label: int, cx: float, cy: float) -> tuple[float, float]:
@@ -329,5 +393,4 @@ def geometry_payload(geometry: Geometry, names: dict[int, str]) -> dict[str, Any
         ],
         "floor": geometry.floor,
         "walls": geometry.walls,
-        "blocked": geometry.blocked,
     }

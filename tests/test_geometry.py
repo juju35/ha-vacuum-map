@@ -76,14 +76,29 @@ def test_to_image() -> None:
     assert grid.to_image((400 + 2) * 50, (450 + 3) * 50) == (2, 9)
 
 
-def test_thick_wall_shapes_are_blocked_areas() -> None:
+def test_furniture_inside_a_room_is_filled() -> None:
     rows = apartment()
-    for y in range(2, 10):  # an 8 x 8 block in room 1: furniture, not a wall
-        for x in range(2, 10):
+    for y in range(3, 7):  # a 4 x 4 block of furniture and a speck in room 1
+        for x in range(3, 7):
             rows[y][x] = 0x01
+    rows[9][8] = 0x00
     geometry = vectorize(parse_grid(raw_map(rows)))
-    assert _bounds(geometry.blocked) == (2, 2, 10, 10)
+    assert len(geometry.rooms[1]) == 1  # no hole
     assert _bounds(geometry.walls) == (0, 0, 22, 12)
+
+
+def test_walls_are_a_band_around_the_rooms() -> None:
+    rows = [[0] * 30 for _ in range(16)]
+    for y in range(4, 12):
+        for x in range(4, 26):
+            rows[y][x] = room(1)
+    for y in range(4, 12):  # what the vacuum saw through a window: floor beyond the room, no wall
+        for x in range(26, 30):
+            rows[y][x] = 0xFF
+    geometry = vectorize(parse_grid(raw_map(rows)))
+    assert geometry.floor == []
+    # a wall all around, 2 px from the room, also on the window side
+    assert _bounds(geometry.walls) == (2, 2, 28, 14)
 
 
 def test_digest_ignores_scanned_pixels() -> None:

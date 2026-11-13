@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0 - 2026-11-13
+
+### Improvements
+- A clean floor plan, as in the Roborock app. The map is cleaned before it is traced:
+  - no more spots on the floors: what is enclosed by a single room (furniture, specks, the outlines of furniture, up to 10 m²) belongs to that room, and so do narrow gaps (up to 25 cm) and furniture against a wall (the same room on three sides within 2 m);
+  - walls are a band around the rooms, drawn even where the vacuum saw through a window, and smoothed like the rooms; doors between two rooms stay open;
+  - what the vacuum saw beyond the rooms (balcony through a window, unsegmented floor, blocked areas) is no longer drawn.
+
 ## 1.1.1 - 2026-11-13
 
 ### Fixes

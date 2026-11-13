@@ -71,6 +71,13 @@ def build() -> bytes:
                             if a - 3 <= px <= c + 2 and b - 3 <= py <= d + 2
                         )
                     )
+    for y in range(110, 150):  # a window of the living room: the vacuum saw the balcony through it
+        for x in range(0, 9):
+            rows[y][x] = 0xFF if x < 6 else rows[y][x]
+        rows[y][7] = rows[y][8] = room(6)
+    for y in range(95, 105):  # a sofa against the living room wall: blocked, not a wall
+        for x in range(10, 30):
+            rows[y][x] = WALL
     rng = random.Random(4)
     for _ in range(60):  # furniture legs: specks the card must ignore
         x, y = rng.randrange(12, 288), rng.randrange(12, 176)

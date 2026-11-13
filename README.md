@@ -120,7 +120,7 @@ rooms:
 
 ## How it works
 
-The official Roborock integration downloads the map of each vacuum and refreshes it about every 30 seconds while it cleans. Vacuum Map reads that map in Home Assistant — no request of its own — and turns its pixels into vectors: each room, the floor and the walls become simplified polygons (furniture legs and specks are left out). The card subscribes to a vacuum through the WebSocket command `vacuum_map/subscribe`: it receives the rooms once, then only the moving part (robot, path, zones) at each update.
+The official Roborock integration downloads the map of each vacuum and refreshes it about every 30 seconds while it cleans. Vacuum Map reads that map in Home Assistant — no request of its own — and turns its pixels into vectors. It first cleans them up: furniture and specks inside a room become part of it, walls are a band around the rooms (even in front of a window the vacuum saw through), and what lies beyond the rooms is left out. Each room and the walls then become simplified polygons. The card subscribes to a vacuum through the WebSocket command `vacuum_map/subscribe`: it receives the rooms once, then only the moving part (robot, path, zones) at each update.
 
 To report a rendering issue, attach the diagnostics of the integration (**Settings → Devices & services → Vacuum Map → ⋮ → Download diagnostics**): they hold the raw map, which reproduces the rendering exactly. The raw map is a floor plan of your home: share it only if you are fine with that.
 

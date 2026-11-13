@@ -10,15 +10,15 @@ from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
 
-from .const import DATA_CACHE, DATA_SUBSCRIPTIONS, DOMAIN
+from .const import DATA_CACHE, DATA_LIVE, DATA_SUBSCRIPTIONS, DOMAIN
 from .geometry import geometry_payload
 from .source import (
     GeometryCache,
     coordinator_for_entity,
     current_map_flag,
+    freshest_content,
     list_maps,
     live_payload,
-    map_content,
     room_names,
 )
 
@@ -84,7 +84,7 @@ async def ws_subscribe(hass: HomeAssistant, connection: websocket_api.ActiveConn
 
     async def _async_send_once() -> None:
         map_flag = fixed_map if fixed_map is not None else current_map_flag(coordinator)
-        content = map_content(coordinator, map_flag) if map_flag is not None else None
+        content = freshest_content(coordinator, map_flag) if map_flag is not None else None
         raw = getattr(content, "raw_api_response", None)
         map_data = getattr(content, "map_data", None)
         if raw is None or map_data is None or raw is state["raw"]:
@@ -104,7 +104,14 @@ async def ws_subscribe(hass: HomeAssistant, connection: websocket_api.ActiveConn
     def _on_update() -> None:
         hass.async_create_task(_async_push(), eager_start=True)
 
-    remove_listener = coordinator.async_add_listener(_on_update)
+    remove_coordinator = coordinator.async_add_listener(_on_update)
+    remove_live = hass.data[DOMAIN][DATA_LIVE].add(coordinator, _on_update)
+
+    @callback
+    def remove_listener() -> None:
+        remove_coordinator()
+        remove_live()
+
     subscriptions: set = hass.data[DOMAIN][DATA_SUBSCRIPTIONS]
 
     @callback

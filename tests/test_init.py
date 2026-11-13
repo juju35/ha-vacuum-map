@@ -189,3 +189,27 @@ async def test_diagnostics(hass: HomeAssistant, setup: MockConfigEntry) -> None:
     assert item["size"] == [22, 12]
     assert item["rooms"] == {1: 1, 2: 1}
     assert item["raw_gzip_base64"]
+
+
+async def test_live_positions_while_cleaning_locally(
+    hass: HomeAssistant, hass_ws_client, setup: MockConfigEntry, roborock: FakeCoordinator, monkeypatch
+) -> None:
+    """While a card follows a vacuum cleaning on the local network, its map content is read every LIVE_INTERVAL."""
+    monkeypatch.setattr("custom_components.vacuum_map.live.LIVE_INTERVAL", 0.01)
+    moves = iter(range(20700, 30000, 50))
+
+    class Trait(SimpleNamespace):
+        async def refresh(self) -> None:
+            roborock.map_data.vacuum_position = _point(next(moves), 22900, 0)
+            self.raw_api_response = raw_map(apartment())
+            self.map_data = roborock.map_data
+
+    roborock.properties_api.map_content = Trait(raw_api_response=None, map_data=None)
+    roborock.properties_api.status = SimpleNamespace(in_cleaning=1)
+    roborock._device = SimpleNamespace(is_local_connected=True)
+    client = await hass_ws_client(hass)
+    await _subscribe(client)
+    event = (await client.receive_json())["event"]
+    assert event["live"]["robot"]["x"] > 12.0
+    await client.send_json({"id": 6, "type": "unsubscribe_events", "subscription": 5})
+    await client.receive_json()

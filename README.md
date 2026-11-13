@@ -39,7 +39,7 @@ Home Assistant integration and Lovelace card that draw a **clean, live map of yo
 - **3D view**: walls raised from the map, floors in their colors, the robot moving on its path; drag to turn around, pinch or wheel to zoom (three.js, loaded only for the 3D view)
 - **Full screen** button: the map at its largest, in 2D or 3D
 - Rotation by 90° steps, visual editor
-- **No extra traffic**: the map is the one the official Roborock integration already fetches; nothing is asked to the cloud or the vacuum
+- **Little traffic**: the map is the one the official Roborock integration already fetches; only while a card is open on a vacuum cleaning on the local network is its map content read every 5 s, never through the cloud
 - **Card bundled with the integration**, added automatically to the dashboard resources
 - Light and dark themes
 - English, French, German, Spanish, Italian, Dutch, European Portuguese, Polish, Romanian, Danish, Swedish, Bulgarian, Russian, Ukrainian, Hungarian, Slovak, Czech, Slovenian, Latvian, Greek and Serbian (Cyrillic and Latin), auto-detected
@@ -120,7 +120,7 @@ rooms:
 
 ## How it works
 
-The official Roborock integration downloads the map of each vacuum and refreshes it about every 30 seconds while it cleans. Vacuum Map reads that map in Home Assistant — no request of its own — and turns its pixels into vectors. It first cleans them up: furniture and specks inside a room become part of it, walls are a band around the rooms (even in front of a window the vacuum saw through), and what lies beyond the rooms is left out. Each room and the walls then become simplified polygons. The card subscribes to a vacuum through the WebSocket command `vacuum_map/subscribe`: it receives the rooms once, then only the moving part (robot, path, zones) at each update.
+The official Roborock integration downloads the map of each vacuum and refreshes it about every 30 seconds while it cleans. Vacuum Map reads that map in Home Assistant and, while a card is open on a vacuum cleaning on the local network, also reads the map content every 5 seconds (one local request, never through the cloud), so that the robot moves almost live. It then turns its pixels into vectors. It first cleans them up: furniture and specks inside a room become part of it, walls are a band around the rooms (even in front of a window the vacuum saw through), and what lies beyond the rooms is left out. Each room and the walls then become simplified polygons. The card subscribes to a vacuum through the WebSocket command `vacuum_map/subscribe`: it receives the rooms once, then only the moving part (robot, path, zones) at each update.
 
 To report a rendering issue, attach the diagnostics of the integration (**Settings → Devices & services → Vacuum Map → ⋮ → Download diagnostics**): they hold the raw map, which reproduces the rendering exactly. The raw map is a floor plan of your home: share it only if you are fine with that.
 

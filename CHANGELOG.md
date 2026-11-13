@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.0 - 2026-11-13
+
+### Improvements
+- Robot position every 5 s instead of 30 s while it cleans: as long as a card follows a vacuum reachable on the local network, Vacuum Map reads its map content more often (one local request, no cloud). The Roborock integration's own 30 s reading goes on as before; a vacuum only reachable through the cloud is not asked more often. The robot on the map is now about 5 s behind the real one instead of 30 s.
+- The robot turns smoothly towards where it goes instead of snapping round.
+
 ## 1.3.0 - 2026-11-13
 
 ### Improvements

@@ -1,7 +1,7 @@
 // Vacuum Map card: a clean, live map of a Roborock vacuum, drawn from the vectors the vacuum_map integration sends.
 // Vanilla JS, no dependency. Served by the integration at /vacuum_map/vacuum-map-card.js.
 
-const VACUUM_MAP_CARD_VERSION = '1.4.0';
+const VACUUM_MAP_CARD_VERSION = '1.4.1';
 
 const VM_STRINGS = {
   en: { loading: 'Loading the map…', no_map: 'No map for this vacuum yet', not_set_up: 'Set up the Vacuum Map integration first', no_entity: 'Choose a vacuum', e_entity: 'Vacuum', e_title: 'Title', e_rotation: 'Rotation', e_labels: 'Room names', e_path: 'Path', e_zones: 'No-go zones', e_obstacles: 'Obstacles', fullscreen: 'Full screen', close: 'Close', e_view: 'View', e_view_toggle: '2D / 3D button', e_fullscreen: 'Full screen button' },
@@ -611,7 +611,11 @@ class VacuumMapCard extends HTMLElement {
     if (!previous || previous.view !== this._config.view) this._is3d = this._config.view === '3d';
     // embedded: the map alone, without card nor header, for another card that shows it (ha-vacuum-card)
     const embedded = this._config.embedded === true;
-    if (!this.shadowRoot) this.attachShadow({ mode: 'open' });
+    if (!this.shadowRoot) {
+      this.attachShadow({ mode: 'open' });
+      this.shadowRoot.addEventListener('pointerdown', () => (this._pointer = true));
+      this.shadowRoot.addEventListener('keydown', () => (this._pointer = false));
+    }
     if (this._embedded !== embedded || !this.shadowRoot.firstChild) {
       this._embedded = embedded;
       this._headKey = null;
@@ -849,6 +853,8 @@ class VacuumMapCard extends HTMLElement {
     map.setConfig({ ...this._config, embedded: true, show_fullscreen: false, max_height: 'calc(100dvh - 96px)', view: this._is3d ? '3d' : '2d' });
     map.hass = this._hass;
     root.querySelector('.stage').appendChild(map);
+    root.addEventListener('pointerdown', () => (this._pointer = true));
+    root.addEventListener('keydown', () => (this._pointer = false));
     root.addEventListener('click', (ev) => {
       if (ev.composedPath().some((n) => n.dataset?.action === 'close')) this.closeFullscreen();
     });
@@ -882,7 +888,8 @@ class VacuumMapCard extends HTMLElement {
     window.removeEventListener('popstate', this._onFullBack);
     document.body.style.overflow = this._bodyOverflow || '';
     if (!fromBack && window.history.state?.vacuumMapFullscreen) window.history.back();
-    this.shadowRoot?.querySelector('[data-action="fullscreen"]')?.focus({ preventScroll: true });
+    // Back to the full screen button for the keyboard only: after a tap, the browser would draw a focus ring on it
+    if (!this._pointer) this.shadowRoot?.querySelector('[data-action="fullscreen"]')?.focus({ preventScroll: true });
   }
 
   _renderFullHead() {
@@ -1024,6 +1031,7 @@ class VacuumMapCard extends HTMLElement {
   _drawLabels() {
     const box = this.shadowRoot.querySelector('.labels');
     if (!box) return;
+    this._spots = null;
     let html = this._labelsHtml((room) => this._pct(...this._tp(room.center[0], room.center[1])));
     html += '<div class="dock" style="display:none"><ha-icon icon="mdi:lightning-bolt"></ha-icon></div>';
     box.innerHTML = html;
@@ -1063,6 +1071,56 @@ class VacuumMapCard extends HTMLElement {
       label.classList.toggle('compact', !full && left < 28);
       label.title = full ? '' : (nameEl?.textContent ?? '');
     }
+    this._spreadLabels(box, scale);
+  }
+
+  // Labels that would cover each other: the small rooms keep their center, a larger room moves its label to another
+  // spot inside it, the nearest to its center that is free. No free spot: it stays where it was.
+  _spreadLabels(box, scale) {
+    const [vx, vy] = this._view;
+    const placed = [];
+    const rooms = new Map(this._geometry.rooms.map((r) => [String(r.id), r]));
+    const labels = [...box.querySelectorAll('.label')].filter((l) => rooms.has(l.dataset.room));
+    labels.sort((a, b) => (rooms.get(a.dataset.room).area || 0) - (rooms.get(b.dataset.room).area || 0));
+    for (const label of labels) {
+      const w = label.offsetWidth + 4;
+      const h = label.offsetHeight + 4;
+      const rect = ([x, y]) => ({ x: (x - vx) * scale - w / 2, y: (y - vy) * scale - h / 2, w, h });
+      const free = (r) => !placed.some((p) => r.x < p.x + p.w && p.x < r.x + r.w && r.y < p.y + p.h && p.y < r.y + r.h);
+      const spots = this._labelSpots(rooms.get(label.dataset.room));
+      const spot = spots.find((s) => free(rect(s))) || spots[0];
+      label.setAttribute('style', `${this._pct(...spot)}${label.style.getPropertyValue('--vm-name-width') ? `;--vm-name-width:${label.style.getPropertyValue('--vm-name-width')}` : ''}`);
+      placed.push(rect(spot));
+    }
+  }
+
+  // Where a room's label can go (view coordinates): its center, then points inside it, the nearest first
+  _labelSpots(room) {
+    this._spots ??= new Map();
+    const cached = this._spots.get(room);
+    if (cached) return cached;
+    const center = this._tp(room.center[0], room.center[1]);
+    const rings = room.rings.map((ring) => {
+      const out = [];
+      for (let i = 0; i < ring.length; i += 2) out.push(...this._tp(ring[i], ring[i + 1]));
+      return out;
+    });
+    const xs = rings.flatMap((r) => r.filter((_, i) => i % 2 === 0));
+    const ys = rings.flatMap((r) => r.filter((_, i) => i % 2 === 1));
+    const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+    const spots = [];
+    const steps = 8;
+    for (let i = 1; i < steps; i++) {
+      for (let j = 1; j < steps; j++) {
+        const x = x0 + ((x1 - x0) * i) / steps;
+        const y = y0 + ((y1 - y0) * j) / steps;
+        if (rings.filter((r) => vmInside(r, x, y)).length % 2) spots.push([x, y]);
+      }
+    }
+    spots.sort((a, b) => Math.hypot(a[0] - center[0], a[1] - center[1]) - Math.hypot(b[0] - center[0], b[1] - center[1]));
+    const out = [center, ...spots];
+    this._spots.set(room, out);
+    return out;
   }
 
   _applyLive(live, redraw = false) {

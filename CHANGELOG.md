@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.1 - 2026-11-13
+
+### Fixes
+- Room names no longer cover each other: the small rooms keep their label in their center, a larger room moves its label to the nearest free spot inside it.
+- No focus ring on the full screen button after closing the full screen with a tap: the focus only goes back to it for the keyboard.
+
 ## 1.4.0 - 2026-11-13
 
 ### Improvements

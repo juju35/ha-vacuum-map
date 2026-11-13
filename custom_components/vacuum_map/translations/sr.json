@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Vacuum Map",
+        "description": "Црта мапе ваших Roborock усисивача, прочитане из интеграције Roborock, у картици Vacuum Map. Ништа не треба уносити."
+      }
+    },
+    "abort": {
+      "no_roborock": "Прво подесите интеграцију Roborock."
+    }
+  }
+}

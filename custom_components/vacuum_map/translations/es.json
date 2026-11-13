@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Vacuum Map",
+        "description": "Dibuja los mapas de tus robots Roborock, leídos de la integración Roborock, en la tarjeta Vacuum Map. No hay nada que introducir."
+      }
+    },
+    "abort": {
+      "no_roborock": "Configura primero la integración Roborock."
+    }
+  }
+}

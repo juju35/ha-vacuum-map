@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Vacuum Map",
+        "description": "A Roborock integrációból olvasott Roborock porszívó-térképeket rajzolja meg a Vacuum Map kártyán. Nincs mit megadni."
+      }
+    },
+    "abort": {
+      "no_roborock": "Előbb állítsa be a Roborock integrációt."
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Vacuum Map",
+        "description": "Dessine les cartes de vos aspirateurs Roborock, lues dans l'intégration Roborock, dans la carte Vacuum Map. Rien à saisir."
+      }
+    },
+    "abort": {
+      "no_roborock": "Configurez d'abord l'intégration Roborock."
+    }
+  }
+}

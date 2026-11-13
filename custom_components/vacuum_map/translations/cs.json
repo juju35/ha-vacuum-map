@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Vacuum Map",
+        "description": "Kreslí mapy vašich vysavačů Roborock, načtené z integrace Roborock, v kartě Vacuum Map. Není co zadávat."
+      }
+    },
+    "abort": {
+      "no_roborock": "Nejprve nastavte integraci Roborock."
+    }
+  }
+}

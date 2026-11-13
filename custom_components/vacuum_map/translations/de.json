@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Vacuum Map",
+        "description": "Zeichnet die Karten deiner Roborock-Sauger aus der Roborock-Integration in der Vacuum-Map-Karte. Keine Eingabe nötig."
+      }
+    },
+    "abort": {
+      "no_roborock": "Richte zuerst die Roborock-Integration ein."
+    }
+  }
+}

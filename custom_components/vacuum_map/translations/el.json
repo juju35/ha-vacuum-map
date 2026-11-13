@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Vacuum Map",
+        "description": "Σχεδιάζει τους χάρτες των σκουπών Roborock, από την ενσωμάτωση Roborock, στην κάρτα Vacuum Map. Δεν χρειάζεται να εισαγάγετε τίποτα."
+      }
+    },
+    "abort": {
+      "no_roborock": "Ρυθμίστε πρώτα την ενσωμάτωση Roborock."
+    }
+  }
+}

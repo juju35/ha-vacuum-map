@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Vacuum Map",
+        "description": "Zīmē jūsu Roborock putekļsūcēju kartes, kas nolasītas no Roborock integrācijas, Vacuum Map kartītē. Nekas nav jāievada."
+      }
+    },
+    "abort": {
+      "no_roborock": "Vispirms iestatiet Roborock integrāciju."
+    }
+  }
+}

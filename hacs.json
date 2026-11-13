@@ -1,0 +1,7 @@
+{
+  "name": "Vacuum Map",
+  "render_readme": true,
+  "zip_release": true,
+  "filename": "vacuum_map.zip",
+  "homeassistant": "2025.12.1"
+}

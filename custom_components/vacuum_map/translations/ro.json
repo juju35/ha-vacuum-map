@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Vacuum Map",
+        "description": "Desenează hărțile aspiratoarelor Roborock, citite din integrarea Roborock, în cardul Vacuum Map. Nimic de introdus."
+      }
+    },
+    "abort": {
+      "no_roborock": "Configurați mai întâi integrarea Roborock."
+    }
+  }
+}

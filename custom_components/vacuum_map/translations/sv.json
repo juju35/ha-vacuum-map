@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Vacuum Map",
+        "description": "Ritar kartorna för dina Roborock-robotar, lästa från Roborock-integrationen, i Vacuum Map-kortet. Inget att fylla i."
+      }
+    },
+    "abort": {
+      "no_roborock": "Konfigurera först Roborock-integrationen."
+    }
+  }
+}

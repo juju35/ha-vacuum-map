@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.0 - 2026-11-13
+
+### Improvements
+- The robot and its path every second while it cleans on the local network (was 5 s): only the map content is read (robot, path, zones), one local request at a time — a reading that takes longer delays the next one, never stacks. The interval is an option of the integration (**Configure**, 1 to 30 s).
+- When a cleaning starts, the whole map is read once (maps, map content, rooms), so that the cleaning starts from an up to date floor plan; the rooms and walls are not read again during the cleaning.
+- The first move of the robot after the card opens no longer crawls (it was spread over 30 s until two updates had been seen).
+
 ## 1.4.1 - 2026-11-13
 
 ### Fixes

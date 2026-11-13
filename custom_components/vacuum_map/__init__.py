@@ -95,7 +95,7 @@ async def _async_register_resource(hass: HomeAssistant) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Follow the Roborock maps."""
-    hass.data[DOMAIN] = {DATA_CACHE: GeometryCache(), DATA_SUBSCRIPTIONS: set(), DATA_LIVE: LivePoller(hass)}
+    hass.data[DOMAIN] = {DATA_CACHE: GeometryCache(), DATA_SUBSCRIPTIONS: set(), DATA_LIVE: LivePoller(hass, entry)}
     if hass.state is CoreState.running and not hass.data.get(CARD_LOADED):
         await _async_load_card(hass)
 

@@ -9,5 +9,19 @@
     "abort": {
       "no_roborock": "Prvo podesite integraciju Roborock."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Mapa uživo",
+        "description": "Koliko često se čitaju robot i njegova putanja dok čisti na lokalnoj mreži. Prostorije i zidovi se ponovo čitaju u celosti na početku svakog čišćenja.",
+        "data": {
+          "live_interval": "Položaj robota svakih"
+        },
+        "data_description": {
+          "live_interval": "Podrazumevano 1 s. Svako čitanje je lokalni zahtev robotu, nikad preko oblaka; sledeće čeka da se prethodno završi."
+        }
+      }
+    }
   }
 }

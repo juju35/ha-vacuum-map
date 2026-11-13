@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from types import SimpleNamespace
 from typing import Any
 
@@ -195,7 +196,8 @@ async def test_live_positions_while_cleaning_locally(
     hass: HomeAssistant, hass_ws_client, setup: MockConfigEntry, roborock: FakeCoordinator, monkeypatch
 ) -> None:
     """While a card follows a vacuum cleaning on the local network, its map content is read every LIVE_INTERVAL."""
-    monkeypatch.setattr("custom_components.vacuum_map.live.LIVE_INTERVAL", 0.01)
+    monkeypatch.setattr("custom_components.vacuum_map.live.MIN_LIVE_INTERVAL", 0.01)
+    hass.config_entries.async_update_entry(setup, options={"live_interval": 0.01})
     moves = iter(range(20700, 30000, 50))
 
     class Trait(SimpleNamespace):
@@ -205,11 +207,51 @@ async def test_live_positions_while_cleaning_locally(
             self.map_data = roborock.map_data
 
     roborock.properties_api.map_content = Trait(raw_api_response=None, map_data=None)
+    full = []
+
+    async def full_refresh() -> None:
+        full.append(1)
+
+    roborock.properties_api.home.refresh = full_refresh
     roborock.properties_api.status = SimpleNamespace(in_cleaning=1)
     roborock._device = SimpleNamespace(is_local_connected=True)
     client = await hass_ws_client(hass)
     await _subscribe(client)
     event = (await client.receive_json())["event"]
     assert event["live"]["robot"]["x"] > 12.0
+    assert full == []  # the cleaning was already going on: no full reading
     await client.send_json({"id": 6, "type": "unsubscribe_events", "subscription": 5})
     await client.receive_json()
+
+
+async def test_full_map_read_when_a_cleaning_starts(
+    hass: HomeAssistant, hass_ws_client, setup: MockConfigEntry, roborock: FakeCoordinator, monkeypatch
+) -> None:
+    monkeypatch.setattr("custom_components.vacuum_map.live.MIN_LIVE_INTERVAL", 0.01)
+    monkeypatch.setattr("custom_components.vacuum_map.live.IDLE_INTERVAL", 0.01)
+    hass.config_entries.async_update_entry(setup, options={"live_interval": 0.01})
+    status = SimpleNamespace(in_cleaning=0)
+    roborock.properties_api.status = status
+    roborock._device = SimpleNamespace(is_local_connected=True)
+    started = asyncio.Event()
+
+    async def full_refresh() -> None:
+        started.set()
+
+    async def position() -> None:
+        pass
+
+    roborock.properties_api.home.refresh = full_refresh
+    roborock.properties_api.map_content = SimpleNamespace(raw_api_response=None, map_data=None, refresh=position)
+    client = await hass_ws_client(hass)
+    await _subscribe(client)
+    status.in_cleaning = 1  # the cleaning starts
+    await asyncio.wait_for(started.wait(), 2)
+
+
+async def test_options_flow(hass: HomeAssistant, setup: MockConfigEntry) -> None:
+    result = await hass.config_entries.options.async_init(setup.entry_id)
+    assert result["type"] == "form"
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"live_interval": 3})
+    assert result["type"] == "create_entry"
+    assert setup.options == {"live_interval": 3}

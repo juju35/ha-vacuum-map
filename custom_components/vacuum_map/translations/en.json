@@ -9,5 +9,19 @@
     "abort": {
       "no_roborock": "Set up the Roborock integration first."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Live map",
+        "description": "How often the robot and its path are read while it cleans on the local network. The rooms and walls are read again in full when a cleaning starts.",
+        "data": {
+          "live_interval": "Robot position every"
+        },
+        "data_description": {
+          "live_interval": "1 s by default. Each reading is a local request to the vacuum, never through the cloud; the next one waits for the previous one to finish."
+        }
+      }
+    }
   }
 }

@@ -9,5 +9,19 @@
     "abort": {
       "no_roborock": "Nejprve nastavte integraci Roborock."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Mapa naživo",
+        "description": "Jak často se čte robot a jeho trasa při úklidu v místní síti. Místnosti a stěny se na začátku každého úklidu přečtou celé.",
+        "data": {
+          "live_interval": "Poloha robota každých"
+        },
+        "data_description": {
+          "live_interval": "Výchozí 1 s. Každé čtení je místní požadavek na robota, nikdy přes cloud; další čeká na dokončení předchozího."
+        }
+      }
+    }
   }
 }

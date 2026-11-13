@@ -88,6 +88,16 @@ def map_content(coordinator: Any, map_flag: int) -> Any | None:
     return (getattr(home, "home_map_content", None) or {}).get(map_flag)
 
 
+def freshest_content(coordinator: Any, map_flag: int) -> Any | None:
+    """The map content to draw: for the selected map, the map content trait itself (read every 30 s by the
+    integration, more often by the live poller); for another map, the cached one."""
+    if map_flag == current_map_flag(coordinator):
+        trait = getattr(getattr(coordinator, "properties_api", None), "map_content", None)
+        if getattr(trait, "raw_api_response", None) is not None and getattr(trait, "map_data", None) is not None:
+            return trait
+    return map_content(coordinator, map_flag)
+
+
 def room_names(coordinator: Any) -> dict[int, str]:
     """Room names from the Roborock app, by segment number."""
     home = _home(coordinator)

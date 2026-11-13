@@ -1,7 +1,7 @@
 // Vacuum Map card: a clean, live map of a Roborock vacuum, drawn from the vectors the vacuum_map integration sends.
 // Vanilla JS, no dependency. Served by the integration at /vacuum_map/vacuum-map-card.js.
 
-const VACUUM_MAP_CARD_VERSION = '1.3.0';
+const VACUUM_MAP_CARD_VERSION = '1.4.0';
 
 const VM_STRINGS = {
   en: { loading: 'Loading the map…', no_map: 'No map for this vacuum yet', not_set_up: 'Set up the Vacuum Map integration first', no_entity: 'Choose a vacuum', e_entity: 'Vacuum', e_title: 'Title', e_rotation: 'Rotation', e_labels: 'Room names', e_path: 'Path', e_zones: 'No-go zones', e_obstacles: 'Obstacles', fullscreen: 'Full screen', close: 'Close', e_view: 'View', e_view_toggle: '2D / 3D button', e_fullscreen: 'Full screen button' },
@@ -1197,6 +1197,7 @@ class VacuumMapCard extends HTMLElement {
       if (bx !== ax || by !== ay) dir = Math.atan2(by - ay, bx - ax);
     }
     this._robotAt = [x, y];
+    let turning = 0;
     const tail = root.querySelector('.path .tail');
     if (tail) tail.setAttribute('points', this._config.show_path ? `${this._points(seg, 0, i * 2)}${this._points([x, y])}` : '');
     const robot = root.querySelector('.robot');
@@ -1204,14 +1205,24 @@ class VacuumMapCard extends HTMLElement {
       const [px, py] = this._tp(x, y);
       if (dir !== null) {
         const [dx, dy] = this._tp(x + Math.cos(dir), y + Math.sin(dir));
-        this._heading = (Math.atan2(dy - py, dx - px) * 180) / Math.PI;
-      } else if (this._heading === undefined && anim.angle != null) this._heading = -anim.angle;
+        this._target = (Math.atan2(dy - py, dx - px) * 180) / Math.PI;
+      } else if (this._target === undefined && anim.angle != null) this._target = -anim.angle;
+      // The robot turns towards where it goes (about a quarter turn in 0.25 s) instead of snapping round
+      const dt = this._lastFrame ? Math.min((time - this._lastFrame) / 1000, 0.1) : 1;
+      this._lastFrame = time;
+      if (this._target !== undefined) {
+        if (this._heading === undefined) this._heading = this._target;
+        turning = ((this._target - this._heading + 540) % 360) - 180;
+        this._heading += turning * Math.min(1, dt * 8);
+      }
       robot.style.display = '';
       robot.setAttribute('transform', `translate(${px.toFixed(2)} ${py.toFixed(2)}) rotate(${(this._heading || 0).toFixed(1)})`);
     }
     if (this._is3d && this._scene?.box) this._scene.setRobot(x, y, this._heading, [...seg.slice(0, i * 2), x, y], this._config.show_path);
-    if (progress < 1 && !document.hidden) this._raf = requestAnimationFrame((t) => this._frame(t));
-    else if (progress < 1) setTimeout(() => !this._raf && (this._raf = requestAnimationFrame((t) => this._frame(t))), 1000);
+    const moving = progress < 1 || Math.abs(turning) > 1;
+    if (!moving) this._lastFrame = 0;
+    if (moving && !document.hidden) this._raf = requestAnimationFrame((t) => this._frame(t));
+    else if (moving) setTimeout(() => !this._raf && (this._raf = requestAnimationFrame((t) => this._frame(t))), 1000);
   }
 
   _updateActiveRoom() {

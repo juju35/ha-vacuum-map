@@ -20,7 +20,8 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.typing import ConfigType
 
-from .const import CARD_URL, DATA_CACHE, DATA_SUBSCRIPTIONS, DOMAIN, THREE_URL, VERSION
+from .const import CARD_URL, DATA_CACHE, DATA_LIVE, DATA_SUBSCRIPTIONS, DOMAIN, THREE_URL, VERSION
+from .live import LivePoller
 from .source import ROBOROCK, GeometryCache
 from .websocket import async_register
 
@@ -94,7 +95,7 @@ async def _async_register_resource(hass: HomeAssistant) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Follow the Roborock maps."""
-    hass.data[DOMAIN] = {DATA_CACHE: GeometryCache(), DATA_SUBSCRIPTIONS: set()}
+    hass.data[DOMAIN] = {DATA_CACHE: GeometryCache(), DATA_SUBSCRIPTIONS: set(), DATA_LIVE: LivePoller(hass)}
     if hass.state is CoreState.running and not hass.data.get(CARD_LOADED):
         await _async_load_card(hass)
 
@@ -116,6 +117,8 @@ def _end_subscriptions(hass: HomeAssistant) -> None:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _end_subscriptions(hass)
+    if live := hass.data.get(DOMAIN, {}).get(DATA_LIVE):
+        live.stop()
     hass.data.pop(DOMAIN, None)
     return True
 

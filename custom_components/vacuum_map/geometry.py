@@ -30,6 +30,9 @@ BLOCK_IMAGE = 2
 MM_PER_PIXEL = 50
 # Vertices closer than this to the simplified line are dropped (pixels)
 SIMPLIFY_TOLERANCE = 0.9
+# Wall shapes thicker than this on average (pixels) are blocked areas (furniture, places the robot cannot reach),
+# not walls: a wall of the map is one or two pixels thick
+MAX_WALL_THICKNESS = 3.0
 # Rings smaller than this are noise (pixels², 1 px² = 25 cm²): furniture legs, specks, the holes they leave in rooms
 MIN_RING_AREA = 8.0
 
@@ -61,6 +64,7 @@ class Geometry:
     areas: dict[int, float] = field(default_factory=dict)
     floor: list[list[float]] = field(default_factory=list)
     walls: list[list[float]] = field(default_factory=list)
+    blocked: list[list[float]] = field(default_factory=list)
     digest: str = ""
 
 
@@ -236,7 +240,7 @@ def vectorize(grid: Grid) -> Geometry:
         if not rings:
             continue
         if label == WALL:
-            geometry.walls = rings
+            geometry.walls, geometry.blocked = split_walls(rings)
         elif label == FLOOR:
             geometry.floor = rings
         else:
@@ -245,6 +249,50 @@ def vectorize(grid: Grid) -> Geometry:
             geometry.areas[label] = round(count * (MM_PER_PIXEL / 1000) ** 2, 1)
             geometry.centers[label] = _label_point(labels, width, label, sx / count, sy / count)
     return geometry
+
+
+def _signed_area(flat: list[float]) -> float:
+    total = 0.0
+    count = len(flat)
+    for i in range(0, count, 2):
+        j = (i + 2) % count
+        total += flat[i] * flat[j + 1] - flat[j] * flat[i + 1]
+    return total / 2
+
+
+def _perimeter(flat: list[float]) -> float:
+    count = len(flat)
+    return sum(math.dist(flat[i : i + 2], flat[(i + 2) % count : (i + 2) % count + 2]) for i in range(0, count, 2))
+
+
+def _inside(flat: list[float], x: float, y: float) -> bool:
+    inside = False
+    count = len(flat)
+    for i in range(0, count, 2):
+        j = (i - 2) % count
+        xi, yi, xj, yj = flat[i], flat[i + 1], flat[j], flat[j + 1]
+        if (yi > y) != (yj > y) and x < (xj - xi) * (y - yi) / (yj - yi) + xi:
+            inside = not inside
+    return inside
+
+
+def split_walls(rings: list[list[float]]) -> tuple[list[list[float]], list[list[float]]]:
+    """Thin shapes (walls) and thick ones (blocked areas), each shape being an outer ring with its holes.
+
+    Rings are traced with the inside on their right: outer rings have a positive area (y down), holes a negative one.
+    """
+    shapes = [[ring] for ring in rings if _signed_area(ring) > 0]
+    for hole in (ring for ring in rings if _signed_area(ring) <= 0):
+        owners = [shape for shape in shapes if _inside(shape[0], hole[0], hole[1])]
+        if owners:
+            min(owners, key=lambda shape: _signed_area(shape[0])).append(hole)
+    walls: list[list[float]] = []
+    blocked: list[list[float]] = []
+    for shape in shapes:
+        area = sum(_signed_area(ring) for ring in shape)
+        thickness = 2 * area / (sum(_perimeter(ring) for ring in shape) or 1)
+        (blocked if thickness > MAX_WALL_THICKNESS else walls).extend(shape)
+    return walls, blocked
 
 
 def _label_point(labels: list[int], width: int, label: int, cx: float, cy: float) -> tuple[float, float]:
@@ -279,4 +327,5 @@ def geometry_payload(geometry: Geometry, names: dict[int, str]) -> dict[str, Any
         ],
         "floor": geometry.floor,
         "walls": geometry.walls,
+        "blocked": geometry.blocked,
     }

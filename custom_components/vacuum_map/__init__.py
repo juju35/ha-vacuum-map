@@ -20,7 +20,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.typing import ConfigType
 
-from .const import CARD_URL, DATA_CACHE, DATA_SUBSCRIPTIONS, DOMAIN, VERSION
+from .const import CARD_URL, DATA_CACHE, DATA_SUBSCRIPTIONS, DOMAIN, THREE_URL, VERSION
 from .source import ROBOROCK, GeometryCache
 from .websocket import async_register
 
@@ -35,7 +35,10 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Serve the card and load it on every dashboard."""
     base = Path(__file__).parent
     await hass.http.async_register_static_paths(
-        [StaticPathConfig(CARD_URL, str(base / "frontend" / "vacuum-map-card.js"), True)]
+        [
+            StaticPathConfig(CARD_URL, str(base / "frontend" / "vacuum-map-card.js"), True),
+            StaticPathConfig(THREE_URL, str(base / "frontend" / "vendor" / "three.min.js"), True),
+        ]
     )
     async_register(hass)
 

@@ -17,6 +17,10 @@ Home Assistant integration and Lovelace card that draw a **clean, live map of yo
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/juju35/ha-vacuum-map/main/screenshots/map-dark.png">
   <img alt="Vacuum Map card" src="https://raw.githubusercontent.com/juju35/ha-vacuum-map/main/screenshots/map.png" width="480">
 </picture>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/juju35/ha-vacuum-map/main/screenshots/map-3d-dark.png">
+  <img alt="Vacuum Map card, 3D view" src="https://raw.githubusercontent.com/juju35/ha-vacuum-map/main/screenshots/map-3d.png" width="480">
+</picture>
 
 ## Supported integrations
 
@@ -32,6 +36,8 @@ Home Assistant integration and Lovelace card that draw a **clean, live map of yo
 - The room being cleaned stands out, the others are dimmed
 - Dock, no-go and no-mop zones, virtual walls and, optionally, obstacles
 - Names too wide for a small room show the icon alone (the name stays as a tooltip)
+- **3D view**: walls raised from the map, floors in their colors, the robot moving on its path; drag to turn around, pinch or wheel to zoom (three.js, loaded only for the 3D view)
+- **Full screen** button: the map at its largest, in 2D or 3D
 - Rotation by 90° steps, visual editor
 - **No extra traffic**: the map is the one the official Roborock integration already fetches; nothing is asked to the cloud or the vacuum
 - **Card bundled with the integration**, added automatically to the dashboard resources
@@ -89,8 +95,12 @@ entity: vacuum.saros_20
 | `show_path` | `true` | Path of the current or last cleaning |
 | `show_zones` | `true` | No-go and no-mop zones, virtual walls |
 | `show_obstacles` | `false` | Obstacles seen by the vacuum |
+| `view` | `2d` | `2d` or `3d`: the view shown when the card opens |
+| `show_view_toggle` | `true` | **2D / 3D** button on the map |
+| `show_fullscreen` | `true` | Full screen button |
 | `max_height` | `70vh` | Maximum height of the map (CSS length) |
 | `rooms` | — | Per room, by number or by name: `name`, `icon`, `color`, `hidden` (hides the label) |
+| `embedded` | `false` | The map alone, without card background nor header, for a card that shows it inside its own |
 
 ```yaml
 type: custom:vacuum-map-card
@@ -103,6 +113,10 @@ rooms:
   Toilets:
     hidden: true
 ```
+
+### In ha-vacuum-card
+
+[ha-vacuum-card](https://github.com/juju35/ha-vacuum-card) draws this map in its map section instead of the Roborock map picture, as soon as Vacuum Map is installed: nothing to configure.
 
 ## How it works
 
@@ -118,7 +132,7 @@ node --test test/*.test.mjs                          # card tests
 python scripts/screenshots.py                        # screenshots/ from a made-up apartment (scripts/demo_map.py)
 ```
 
-The card is plain JavaScript (`custom_components/vacuum_map/frontend/vacuum-map-card.js`), served by the integration: no build step.
+The card is plain JavaScript (`custom_components/vacuum_map/frontend/vacuum-map-card.js`), served by the integration: no build step. The 3D view uses a subset of three.js, `frontend/vendor/three.min.js`, rebuilt with `npm install --no-save three esbuild && node scripts/build-three.mjs`.
 
 ### Releasing
 

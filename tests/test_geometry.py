@@ -74,3 +74,13 @@ def test_to_image() -> None:
     grid = parse_grid(raw_map(apartment()))
     # Pixel (left + 2, top + 3) from the bottom = image x 2, y height - 3
     assert grid.to_image((400 + 2) * 50, (450 + 3) * 50) == (2, 9)
+
+
+def test_thick_wall_shapes_are_blocked_areas() -> None:
+    rows = apartment()
+    for y in range(2, 10):  # an 8 x 8 block in room 1: furniture, not a wall
+        for x in range(2, 10):
+            rows[y][x] = 0x01
+    geometry = vectorize(parse_grid(raw_map(rows)))
+    assert _bounds(geometry.blocked) == (2, 2, 10, 10)
+    assert _bounds(geometry.walls) == (0, 0, 22, 12)

@@ -1,3 +1,4 @@
+exclude: ^custom_components/vacuum_map/frontend/vendor/
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0

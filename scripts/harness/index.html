@@ -20,6 +20,6 @@ fetch('demo.json').then(r=>r.json()).then(demo=>{
       const more=JSON.parse(JSON.stringify(demo.live));const p=more.path[0];const lx=p[p.length-2],ly=p[p.length-1];
       p.push(lx-40,ly,lx-40,ly+3,lx,ly+3);more.robot={x:lx,y:ly+3,a:0};
       setTimeout(()=>cb({map:0,live:more}),400);return Promise.resolve(()=>{})}}};
-  const card=document.createElement('vacuum-map-card');card.setConfig({entity:'vacuum.saros'});document.getElementById('host').appendChild(card);card.hass=hass;window.card=card;
+  const card=document.createElement('vacuum-map-card');card.setConfig({entity:'vacuum.saros',view:params.get('view')||'2d',embedded:params.get('embedded')==='1'});document.getElementById('host').appendChild(card);card.hass=hass;window.card=card;
 });
 </script></body></html>

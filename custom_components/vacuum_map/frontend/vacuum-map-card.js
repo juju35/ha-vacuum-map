@@ -1,7 +1,7 @@
 // Vacuum Map card: a clean, live map of a Roborock vacuum, drawn from the vectors the vacuum_map integration sends.
 // Vanilla JS, no dependency. Served by the integration at /vacuum_map/vacuum-map-card.js.
 
-const VACUUM_MAP_CARD_VERSION = '1.2.0';
+const VACUUM_MAP_CARD_VERSION = '1.3.0';
 
 const VM_STRINGS = {
   en: { loading: 'Loading the map…', no_map: 'No map for this vacuum yet', not_set_up: 'Set up the Vacuum Map integration first', no_entity: 'Choose a vacuum', e_entity: 'Vacuum', e_title: 'Title', e_rotation: 'Rotation', e_labels: 'Room names', e_path: 'Path', e_zones: 'No-go zones', e_obstacles: 'Obstacles', fullscreen: 'Full screen', close: 'Close', e_view: 'View', e_view_toggle: '2D / 3D button', e_fullscreen: 'Full screen button' },
@@ -213,11 +213,34 @@ class VmScene {
     return shape;
   }
 
+  // One mesh for the polygons of these rings. A polygon three.js cannot triangulate is left out (and logged): the rest
+  // of the map is still drawn.
   _slab(rings, depth, material) {
     const T = this.T;
+    const make = (shapes) => (depth ? new T.ExtrudeGeometry(shapes, { depth, bevelEnabled: false }) : new T.ShapeGeometry(shapes));
     const shapes = vmPolygons(rings).map((p) => this._shape(p));
     if (!shapes.length) return null;
-    const geometry = depth ? new T.ExtrudeGeometry(shapes, { depth, bevelEnabled: false }) : new T.ShapeGeometry(shapes);
+    let geometry;
+    try {
+      geometry = make(shapes);
+    } catch (err) {
+      console.warn('vacuum-map-card: 3D shapes drawn one by one', err);
+      const kept = shapes.filter((shape) => {
+        try {
+          make([shape]).dispose();
+          return true;
+        } catch {
+          return false;
+        }
+      });
+      if (!kept.length) return null;
+      geometry = make(kept);
+    }
+    if (!geometry.attributes.position?.count || Number.isNaN(geometry.attributes.position.array[0])) {
+      console.warn('vacuum-map-card: empty or invalid 3D shape', rings.length);
+      geometry.dispose();
+      return null;
+    }
     const mesh = new T.Mesh(geometry, material);
     mesh.rotation.x = -Math.PI / 2;
     mesh.receiveShadow = true;
@@ -250,6 +273,15 @@ class VmScene {
   }
 
   build(geometry, labelsHtml) {
+    try {
+      this._build(geometry, labelsHtml);
+    } catch (err) {
+      console.error('vacuum-map-card: 3D view', err);
+    }
+    this.request();
+  }
+
+  _build(geometry, labelsHtml) {
     const T = this.T;
     const [vx, vy, vw, vh] = this.card._view;
     this.cx = vx + vw / 2;

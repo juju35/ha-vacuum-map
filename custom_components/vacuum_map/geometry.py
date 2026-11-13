@@ -38,6 +38,10 @@ MAX_ISLAND = 4000
 MAX_GAP = 5
 # - and what has the same room on three sides within this distance (2 m): furniture against a wall
 MAX_REACH = 40
+# - parts of a room narrower than 2 × PROTRUSION + 1 that touch no other room within NEIGHBOUR_REACH are cut: what
+#   the vacuum saw through a window (a strip of balcony labelled as the room); corridors touch other rooms, they stay
+PROTRUSION = 6
+NEIGHBOUR_REACH = 6
 # - walls are drawn as a band of this width around the rooms, whatever the vacuum saw beyond them (through windows)
 WALL_BAND = 2
 # Rings smaller than this are noise (pixels², 1 px² = 25 cm²): furniture legs, specks, the holes they leave in rooms
@@ -283,24 +287,76 @@ def _fill_islands(labels: list[int], width: int, height: int) -> None:
                 labels[i] = room
 
 
-def _wall_band(labels: list[int], width: int, height: int) -> None:
-    """Walls: the non-room pixels within WALL_BAND of a room. Everything else is left out (what the vacuum saw through
-    windows, unsegmented floor, blocked areas), and there is a wall even where the map has none (a window)."""
-    near = bytearray(1 if value > 0 else 0 for value in labels)
-    band = WALL_BAND
-    # Grow the rooms by WALL_BAND pixels (square neighbourhood): along the rows, then along the columns
-    rows = bytearray(len(near))
+def _grow(mask: bytearray, width: int, height: int, radius: int) -> bytearray:
+    """The mask grown by `radius` pixels (square neighbourhood): along the rows, then along the columns."""
+    rows = bytearray(len(mask))
     for y in range(height):
         row = y * width
         for x in range(width):
-            if any(near[row + max(0, x - band) : row + min(width, x + band + 1)]):
+            if any(mask[row + max(0, x - radius) : row + min(width, x + radius + 1)]):
                 rows[row + x] = 1
-    near = bytearray(len(rows))
+    out = bytearray(len(mask))
     for x in range(width):
         column = rows[x::width]
         for y in range(height):
-            if any(column[max(0, y - band) : y + band + 1]):
-                near[y * width + x] = 1
+            if any(column[max(0, y - radius) : y + radius + 1]):
+                out[y * width + x] = 1
+    return out
+
+
+def _cut_protrusions(labels: list[int], width: int, height: int) -> None:
+    """Cut the narrow parts of each room that reach out into nothing (seen through a window)."""
+    r = PROTRUSION
+    for room in sorted({value for value in labels if value > 0}):
+        cells = [i for i, value in enumerate(labels) if value == room]
+        xs = [i % width for i in cells]
+        ys = [i // width for i in cells]
+        margin = r + NEIGHBOUR_REACH + 1
+        x0, y0 = max(0, min(xs) - margin), max(0, min(ys) - margin)
+        x1, y1 = min(width, max(xs) + margin + 1), min(height, max(ys) + margin + 1)
+        w, h = x1 - x0, y1 - y0
+        inside = bytearray(w * h)
+        others = bytearray(w * h)
+        for y in range(h):
+            src = (y0 + y) * width + x0
+            for x in range(w):
+                value = labels[src + x]
+                if value == room:
+                    inside[y * w + x] = 1
+                elif value > 0:
+                    others[y * w + x] = 1
+        # opening: shrink then grow back; what does not come back is narrower than 2r + 1
+        outside = bytearray(1 - v for v in inside)
+        shrunk = bytearray(1 - v for v in _grow(outside, w, h, r))
+        kept = _grow(shrunk, w, h, r)
+        # A room that is mostly narrow (a corridor on its own) is what it is: nothing to cut
+        if sum(kept[i] and inside[i] for i in range(w * h)) < len(cells) / 2:
+            continue
+        near_others = _grow(others, w, h, NEIGHBOUR_REACH)
+        seen = bytearray(w * h)
+        for start in range(w * h):
+            if not inside[start] or kept[start] or seen[start]:
+                continue
+            seen[start] = 1
+            stack, part, touches = [start], [], False
+            while stack:
+                i = stack.pop()
+                part.append(i)
+                touches = touches or bool(near_others[i])
+                x, y = i % w, i // w
+                for j, ok in ((i - 1, x > 0), (i + 1, x < w - 1), (i - w, y > 0), (i + w, y < h - 1)):
+                    if ok and inside[j] and not kept[j] and not seen[j]:
+                        seen[j] = 1
+                        stack.append(j)
+            if not touches:
+                for i in part:
+                    labels[(y0 + i // w) * width + x0 + i % w] = OUTSIDE
+
+
+def _wall_band(labels: list[int], width: int, height: int) -> None:
+    """Walls: the non-room pixels within WALL_BAND of a room. Everything else is left out (what the vacuum saw through
+    windows, unsegmented floor, blocked areas), and there is a wall even where the map has none (a window)."""
+    near = _grow(bytearray(1 if value > 0 else 0 for value in labels), width, height, WALL_BAND)
     for i, value in enumerate(labels):
         if value <= 0:
             labels[i] = WALL if near[i] else OUTSIDE
@@ -311,6 +367,7 @@ def clean(grid: Grid) -> list[int]:
     labels = list(grid.labels)
     _fill_gaps(labels, grid.width, grid.height)
     _fill_islands(labels, grid.width, grid.height)
+    _cut_protrusions(labels, grid.width, grid.height)
     _wall_band(labels, grid.width, grid.height)
     return labels
 

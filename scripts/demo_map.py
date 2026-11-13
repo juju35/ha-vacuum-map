@@ -78,6 +78,11 @@ def build() -> bytes:
     for y in range(95, 105):  # a sofa against the living room wall: blocked, not a wall
         for x in range(10, 30):
             rows[y][x] = WALL
+    for y in range(178, 189):  # strips seen through windows, labelled as the rooms: the card cuts them
+        for x in range(100, 107):
+            rows[y][x] = room(8)
+        for x in range(30, 36):
+            rows[y][x] = room(6)
     rng = random.Random(4)
     for _ in range(60):  # furniture legs: specks the card must ignore
         x, y = rng.randrange(12, 288), rng.randrange(12, 176)

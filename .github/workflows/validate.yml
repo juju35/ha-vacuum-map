@@ -93,8 +93,9 @@ jobs:
           python-version: "3.13"
 
       # 0.13.299 pins homeassistant==2025.12.1, the minimum in hacs.json (the Roborock map API it reads).
+      # pycares 5 (pulled in unpinned) breaks the aiodns of that release: test harness only.
       - name: Install dependencies
-        run: pip install "pytest-homeassistant-custom-component==0.13.299"
+        run: pip install "pytest-homeassistant-custom-component==0.13.299" "pycares<5"
 
       - name: Run tests
         run: pytest

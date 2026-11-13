@@ -84,3 +84,14 @@ def test_thick_wall_shapes_are_blocked_areas() -> None:
     geometry = vectorize(parse_grid(raw_map(rows)))
     assert _bounds(geometry.blocked) == (2, 2, 10, 10)
     assert _bounds(geometry.walls) == (0, 0, 22, 12)
+
+
+def test_digest_ignores_scanned_pixels() -> None:
+    # A room pixel becoming scanned floor changes the geometry; floor becoming scanned floor does not
+    rows = apartment()
+    first = parse_grid(raw_map(rows))
+    rows[5][5] = 0x07
+    assert parse_grid(raw_map(rows)).digest != first.digest
+    outside = [[0xFF, 0x07, room(3)]]
+    scanned = [[0x07, 0xFF, room(3)]]
+    assert parse_grid(raw_map(outside)).digest == parse_grid(raw_map(scanned)).digest

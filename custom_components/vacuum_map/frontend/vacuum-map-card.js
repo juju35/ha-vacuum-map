@@ -1,7 +1,7 @@
 // Vacuum Map card: a clean, live map of a Roborock vacuum, drawn from the vectors the vacuum_map integration sends.
 // Vanilla JS, no dependency. Served by the integration at /vacuum_map/vacuum-map-card.js.
 
-const VACUUM_MAP_CARD_VERSION = '1.1.0';
+const VACUUM_MAP_CARD_VERSION = '1.1.1';
 
 const VM_STRINGS = {
   en: { loading: 'Loading the map…', no_map: 'No map for this vacuum yet', not_set_up: 'Set up the Vacuum Map integration first', no_entity: 'Choose a vacuum', e_entity: 'Vacuum', e_title: 'Title', e_rotation: 'Rotation', e_labels: 'Room names', e_path: 'Path', e_zones: 'No-go zones', e_obstacles: 'Obstacles', fullscreen: 'Full screen', close: 'Close', e_view: 'View', e_view_toggle: '2D / 3D button', e_fullscreen: 'Full screen button' },
@@ -696,11 +696,17 @@ class VacuumMapCard extends HTMLElement {
     if (this._lastEvent) this._interval = Math.min(Math.max(now - this._lastEvent, 1000), 35000);
     this._lastEvent = now;
     if (event.geometry) {
+      // The same map redrawn (its image changed while cleaning): the robot carries on from where it is shown
+      const sameMap = !!this._geometry && event.map === this._mapId;
       this._geometry = event.geometry;
-      this._live = null;
-      this._robotAt = null;
+      if (!sameMap) {
+        this._live = null;
+        this._robotAt = null;
+        this._anim = null;
+      }
       this._drawAll();
     }
+    this._mapId = event.map;
     this._applyLive(event.live);
   }
 
@@ -1075,31 +1081,59 @@ class VacuumMapCard extends HTMLElement {
         : '';
     }
 
-    // Path and robot: the robot travels the new part of the path until the next update
+    // Path and robot: the robot travels from where it is shown to its new position, along the new part of the path,
+    // until the next update (Roborock sends one about every 30 s while cleaning)
     const flat = (live.path || []).flat();
     const robot = live.robot;
-    const prevFlat = previous && !redraw ? (previous.path || []).flat() : null;
-    // Same cleaning run: the path grew. Anything else (new run, other map, redraw): no animation
-    const animate = !!prevFlat?.length && flat.length >= prevFlat.length && flat[0] === prevFlat[0] && flat[1] === prevFlat[1];
-    const from = animate ? prevFlat.length : flat.length;
-    const segment = [];
-    if (animate && this._robotAt) segment.push(...this._robotAt);
-    segment.push(...flat.slice(from));
-    if (robot) segment.push(robot.x, robot.y);
-    this._anim = {
-      done: this._config.show_path ? this._points(flat, 0, from) : '',
-      segment,
-      lengths: this._lengths(segment),
-      startTime: performance.now(),
-      duration: animate ? Math.min((this._interval || 30000) * 0.95, 33000) : 0,
-      angle: robot?.a,
-      flat,
-      from,
-    };
+    if (redraw && this._anim) {
+      // New drawing of the same data: the running move goes on
+      this._anim.done = this._config.show_path ? this._points(this._anim.flat, 0, this._anim.from) : '';
+    } else {
+      const from = this._resumeAt(flat, previous);
+      const segment = [];
+      const moving = this._robotAt && robot && (from < flat.length || Math.hypot(robot.x - this._robotAt[0], robot.y - this._robotAt[1]) < 200);
+      if (moving) segment.push(...this._robotAt);
+      segment.push(...flat.slice(from));
+      if (robot) segment.push(robot.x, robot.y);
+      this._anim = {
+        done: this._config.show_path ? this._points(flat, 0, from) : '',
+        segment,
+        lengths: this._lengths(segment),
+        startTime: performance.now(),
+        duration: moving ? Math.min((this._interval || 30000) * 0.95, 33000) : 0,
+        angle: robot?.a,
+        flat,
+        from,
+      };
+    }
     if (this._is3d && this._scene?.box) this._scene.setLive(live, this._anim, this._config);
     const done = root.querySelector('.path .done');
     if (done) done.setAttribute('points', this._anim.done);
     if (!this._raf) this._raf = requestAnimationFrame((t) => this._frame(t));
+  }
+
+  // Where the robot shown on the map is on the new path: the path point nearest to it, looked for around the end of
+  // the previous path, else anywhere near the end (Roborock may shorten or resample the path). The new part starts
+  // there. No such point (new cleaning, other map): the whole path is already done.
+  _resumeAt(flat, previous) {
+    if (!this._robotAt || !previous) return flat.length;
+    const [rx, ry] = this._robotAt;
+    const near = (lo, hi) => {
+      let best = -1;
+      let bestD = 15 * 15; // 75 cm
+      for (let i = lo - (lo % 2); i < hi; i += 2) {
+        const d = (flat[i] - rx) ** 2 + (flat[i + 1] - ry) ** 2;
+        if (d < bestD) {
+          bestD = d;
+          best = i;
+        }
+      }
+      return best;
+    };
+    const before = (previous.path || []).flat().length;
+    let at = near(Math.max(0, before - 800), Math.min(flat.length, before + 200));
+    if (at < 0) at = near(Math.max(0, flat.length - 4000), flat.length);
+    return at < 0 ? flat.length : at + 2;
   }
 
   _lengths(seg) {

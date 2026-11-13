@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1 - 2026-11-13
+
+### Fixes
+- Smoother robot: it now always moves on from where it is shown, along the new part of its path, until the next map update. It jumped when the map image changed while cleaning (the whole map was sent and drawn again, and the move started over) and when Roborock shortened its path (the new path was no longer taken for the same cleaning).
+- The rooms are only sent again when they change: the area the robot scans while cleaning no longer counts.
+
 ## 1.1.0 - 2026-11-13
 
 ### Features

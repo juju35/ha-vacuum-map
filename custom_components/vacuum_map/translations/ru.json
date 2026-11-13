@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Vacuum Map",
+        "description": "Рисует карты ваших пылесосов Roborock, полученные из интеграции Roborock, в карточке Vacuum Map. Ничего вводить не нужно."
+      }
+    },
+    "abort": {
+      "no_roborock": "Сначала настройте интеграцию Roborock."
+    }
+  }
+}

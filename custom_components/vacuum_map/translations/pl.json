@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Vacuum Map",
+        "description": "Rysuje mapy odkurzaczy Roborock, odczytane z integracji Roborock, na karcie Vacuum Map. Nie trzeba nic wpisywać."
+      }
+    },
+    "abort": {
+      "no_roborock": "Najpierw skonfiguruj integrację Roborock."
+    }
+  }
+}

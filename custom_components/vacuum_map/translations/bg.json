@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Vacuum Map",
+        "description": "Изчертава картите на прахосмукачките Roborock, прочетени от интеграцията Roborock, в картата Vacuum Map. Нищо не трябва да се въвежда."
+      }
+    },
+    "abort": {
+      "no_roborock": "Първо настройте интеграцията Roborock."
+    }
+  }
+}

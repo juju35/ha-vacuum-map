@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Vacuum Map",
+        "description": "Draws the maps of your Roborock vacuums, read from the Roborock integration, in the Vacuum Map card. Nothing to enter."
+      }
+    },
+    "abort": {
+      "no_roborock": "Set up the Roborock integration first."
+    }
+  }
+}

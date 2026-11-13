@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Vacuum Map",
+        "description": "Малює карти ваших пилососів Roborock, отримані з інтеграції Roborock, у картці Vacuum Map. Нічого вводити не потрібно."
+      }
+    },
+    "abort": {
+      "no_roborock": "Спершу налаштуйте інтеграцію Roborock."
+    }
+  }
+}

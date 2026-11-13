@@ -1,0 +1,25 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>
+body{margin:0;padding:16px;font-family:Roboto,system-ui,sans-serif;background:var(--bg);width:520px}
+body.dark{--bg:#111318;--card-background-color:#1c1d22;--ha-card-background:#1c1d22;--primary-text-color:#e4e6eb;--secondary-text-color:#9aa0aa}
+body.light{--bg:#eef0f3;--card-background-color:#fff;--ha-card-background:#fff;--primary-text-color:#1f2328;--secondary-text-color:#6b7280}
+</style>
+<script src="icons.js"></script>
+<script>
+customElements.define('ha-card',class extends HTMLElement{connectedCallback(){this.style.cssText+=';display:block;border-radius:12px;background:var(--ha-card-background);color:var(--primary-text-color)'}});
+customElements.define('ha-icon',class extends HTMLElement{static get observedAttributes(){return['icon']}attributeChangedCallback(){this.render()}connectedCallback(){this.render()}render(){const n=(this.getAttribute('icon')||'').replace('mdi:','');const p=ICONS[n]||'';this.style.cssText='display:inline-flex;width:var(--mdc-icon-size,24px);height:var(--mdc-icon-size,24px)';this.innerHTML=`<svg viewBox="0 0 24 24" width="100%" height="100%"><path fill="currentColor" d="${p}"/></svg>`}});
+</script>
+<script src="vacuum-map-card.js"></script>
+</head><body class="dark"><div id="host"></div>
+<script>
+const params=new URLSearchParams(location.search);document.body.className=params.get('theme')||'dark';
+fetch('demo.json').then(r=>r.json()).then(demo=>{
+  const hass={locale:{language:params.get('lang')||'en'},states:{'vacuum.saros':{state:'cleaning',attributes:{friendly_name:'Saros 20'}}},
+    formatEntityState:(s)=>({cleaning:'Cleaning'}[s.state]||s.state),
+    connection:{subscribeMessage:(cb,msg)=>{window.lastMsg=msg;setTimeout(()=>cb(demo),30);
+      const more=JSON.parse(JSON.stringify(demo.live));const p=more.path[0];const lx=p[p.length-2],ly=p[p.length-1];
+      p.push(lx-40,ly,lx-40,ly+3,lx,ly+3);more.robot={x:lx,y:ly+3,a:0};
+      setTimeout(()=>cb({map:0,live:more}),400);return Promise.resolve(()=>{})}}};
+  const card=document.createElement('vacuum-map-card');card.setConfig({entity:'vacuum.saros'});document.getElementById('host').appendChild(card);card.hass=hass;window.card=card;
+});
+</script></body></html>

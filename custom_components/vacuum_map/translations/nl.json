@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Vacuum Map",
+        "description": "Tekent de kaarten van je Roborock-robots, gelezen uit de Roborock-integratie, in de Vacuum Map-kaart. Niets in te vullen."
+      }
+    },
+    "abort": {
+      "no_roborock": "Stel eerst de Roborock-integratie in."
+    }
+  }
+}

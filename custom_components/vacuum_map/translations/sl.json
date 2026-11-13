@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Vacuum Map",
+        "description": "Nariše zemljevide vaših sesalnikov Roborock, prebrane iz integracije Roborock, v kartici Vacuum Map. Ničesar ni treba vnesti."
+      }
+    },
+    "abort": {
+      "no_roborock": "Najprej nastavite integracijo Roborock."
+    }
+  }
+}

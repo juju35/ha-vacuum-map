@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import math
+from array import array
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any
@@ -121,7 +122,8 @@ def parse_grid(raw: bytes) -> Grid | None:
                 src = (height - 1 - row) * width
                 dst = row * width
                 labels[dst : dst + width] = [table[value] for value in data[src : src + width]]
-            digest = hashlib.blake2b(data, digest_size=8).hexdigest()
+            # Digest of the labels, not of the raw pixels: the scanned area grows while cleaning, the rooms stay
+            digest = hashlib.blake2b(array("b", labels).tobytes(), digest_size=8).hexdigest()
             return Grid(width, height, left, top, labels, digest)
         position += data_length + header[2]
     return None

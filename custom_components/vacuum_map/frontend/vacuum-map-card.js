@@ -1,7 +1,7 @@
 // Vacuum Map card: a clean, live map of a Roborock vacuum, drawn from the vectors the vacuum_map integration sends.
 // Vanilla JS, no dependency. Served by the integration at /vacuum_map/vacuum-map-card.js.
 
-const VACUUM_MAP_CARD_VERSION = '1.4.1';
+const VACUUM_MAP_CARD_VERSION = '1.5.0';
 
 const VM_STRINGS = {
   en: { loading: 'Loading the map…', no_map: 'No map for this vacuum yet', not_set_up: 'Set up the Vacuum Map integration first', no_entity: 'Choose a vacuum', e_entity: 'Vacuum', e_title: 'Title', e_rotation: 'Rotation', e_labels: 'Room names', e_path: 'Path', e_zones: 'No-go zones', e_obstacles: 'Obstacles', fullscreen: 'Full screen', close: 'Close', e_view: 'View', e_view_toggle: '2D / 3D button', e_fullscreen: 'Full screen button' },
@@ -1185,7 +1185,8 @@ class VacuumMapCard extends HTMLElement {
         segment,
         lengths: this._lengths(segment),
         startTime: performance.now(),
-        duration: moving ? Math.min((this._interval || 30000) * 0.95, 33000) : 0,
+        // Until two updates have been seen, assume the live rate (1 s): a 30 s guess made the first move crawl
+      duration: moving ? Math.min((this._interval || 1000) * 0.95, 33000) : 0,
         angle: robot?.a,
         flat,
         from,

@@ -9,5 +9,19 @@
     "abort": {
       "no_roborock": "Konfigurera först Roborock-integrationen."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Livekarta",
+        "description": "Hur ofta roboten och dess rutt läses medan den städar i det lokala nätverket. Rum och väggar läses om helt när en städning börjar.",
+        "data": {
+          "live_interval": "Robotposition var"
+        },
+        "data_description": {
+          "live_interval": "1 s som standard. Varje läsning är en lokal begäran till roboten, aldrig via molnet; nästa väntar tills den föregående är klar."
+        }
+      }
+    }
   }
 }

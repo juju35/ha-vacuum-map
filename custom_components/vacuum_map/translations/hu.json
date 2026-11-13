@@ -9,5 +9,19 @@
     "abort": {
       "no_roborock": "Előbb állítsa be a Roborock integrációt."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Élő térkép",
+        "description": "Milyen gyakran olvassa a robotot és az útvonalát, amíg a helyi hálózaton takarít. A helyiségeket és falakat minden takarítás elején teljesen újraolvassa.",
+        "data": {
+          "live_interval": "Robot pozíciója minden"
+        },
+        "data_description": {
+          "live_interval": "Alapértelmezés 1 s. Minden olvasás helyi kérés a robothoz, sosem a felhőn át; a következő megvárja az előző végét."
+        }
+      }
+    }
   }
 }

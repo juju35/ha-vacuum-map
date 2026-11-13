@@ -9,5 +9,19 @@
     "abort": {
       "no_roborock": "Opsæt først Roborock-integrationen."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Livekort",
+        "description": "Hvor ofte robotten og dens rute læses, mens den rengør på det lokale netværk. Rum og vægge læses helt igen, når en rengøring starter.",
+        "data": {
+          "live_interval": "Robotposition hvert"
+        },
+        "data_description": {
+          "live_interval": "1 s som standard. Hver læsning er en lokal forespørgsel til robotten, aldrig via skyen; den næste venter, til den forrige er færdig."
+        }
+      }
+    }
   }
 }

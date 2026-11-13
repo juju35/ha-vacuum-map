@@ -9,5 +9,19 @@
     "abort": {
       "no_roborock": "Richte zuerst die Roborock-Integration ein."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Live-Karte",
+        "description": "Wie oft der Roboter und sein Weg gelesen werden, während er im lokalen Netz reinigt. Räume und Wände werden zu Beginn jeder Reinigung vollständig neu gelesen.",
+        "data": {
+          "live_interval": "Roboterposition alle"
+        },
+        "data_description": {
+          "live_interval": "Standardmäßig 1 s. Jede Abfrage ist eine lokale Anfrage an den Sauger, nie über die Cloud; die nächste wartet, bis die vorherige fertig ist."
+        }
+      }
+    }
   }
 }

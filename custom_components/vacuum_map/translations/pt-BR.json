@@ -9,5 +9,19 @@
     "abort": {
       "no_roborock": "Configure primeiro a integração Roborock."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Mapa em direto",
+        "description": "Frequência de leitura do robô e do seu trajeto enquanto limpa na rede local. As divisões e paredes são relidas por completo no início de cada limpeza.",
+        "data": {
+          "live_interval": "Posição do robô a cada"
+        },
+        "data_description": {
+          "live_interval": "1 s por omissão. Cada leitura é um pedido local ao robô, nunca pela nuvem; a seguinte espera que a anterior termine."
+        }
+      }
+    }
   }
 }

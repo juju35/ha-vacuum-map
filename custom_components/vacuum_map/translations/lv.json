@@ -9,5 +9,19 @@
     "abort": {
       "no_roborock": "Vispirms iestatiet Roborock integrāciju."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Tiešraides karte",
+        "description": "Cik bieži nolasa robotu un tā maršrutu, kamēr tas tīra vietējā tīklā. Telpas un sienas katras tīrīšanas sākumā tiek nolasītas pilnībā no jauna.",
+        "data": {
+          "live_interval": "Robota pozīcija ik pēc"
+        },
+        "data_description": {
+          "live_interval": "Pēc noklusējuma 1 s. Katra nolasīšana ir lokāls pieprasījums robotam, nekad caur mākoni; nākamā gaida, līdz iepriekšējā beidzas."
+        }
+      }
+    }
   }
 }

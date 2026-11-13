@@ -9,5 +9,19 @@
     "abort": {
       "no_roborock": "Configurați mai întâi integrarea Roborock."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Hartă în timp real",
+        "description": "Cât de des sunt citite robotul și traseul său în timp ce curăță în rețeaua locală. Camerele și pereții sunt recitite complet la începutul fiecărei curățări.",
+        "data": {
+          "live_interval": "Poziția robotului la fiecare"
+        },
+        "data_description": {
+          "live_interval": "1 s implicit. Fiecare citire este o cerere locală către robot, niciodată prin cloud; următoarea așteaptă terminarea celei anterioare."
+        }
+      }
+    }
   }
 }

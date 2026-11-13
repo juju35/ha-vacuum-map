@@ -8,3 +8,5 @@ async_remove_entry  # unused function (custom_components/vacuum_map/__init__.py:
 VacuumMapConfigFlow  # unused class (custom_components/vacuum_map/config_flow.py:13)
 _.async_step_user  # unused method (custom_components/vacuum_map/config_flow.py:18)
 async_get_config_entry_diagnostics  # unused function (custom_components/vacuum_map/diagnostics.py:16)
+_.async_get_options_flow  # unused method (custom_components/vacuum_map/config_flow.py)
+_.async_step_init  # unused method (custom_components/vacuum_map/config_flow.py)

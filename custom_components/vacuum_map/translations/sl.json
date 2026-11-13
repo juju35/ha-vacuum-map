@@ -9,5 +9,19 @@
     "abort": {
       "no_roborock": "Najprej nastavite integracijo Roborock."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Zemljevid v živo",
+        "description": "Kako pogosto se bereta robot in njegova pot med čiščenjem v lokalnem omrežju. Prostori in stene se ob začetku vsakega čiščenja v celoti preberejo znova.",
+        "data": {
+          "live_interval": "Položaj robota vsakih"
+        },
+        "data_description": {
+          "live_interval": "Privzeto 1 s. Vsako branje je lokalna zahteva robotu, nikoli prek oblaka; naslednje počaka, da se prejšnje konča."
+        }
+      }
+    }
   }
 }

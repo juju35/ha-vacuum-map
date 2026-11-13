@@ -9,5 +9,19 @@
     "abort": {
       "no_roborock": "Najpierw skonfiguruj integrację Roborock."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Mapa na żywo",
+        "description": "Jak często odczytywane są robot i jego trasa podczas sprzątania w sieci lokalnej. Pomieszczenia i ściany są odczytywane w całości na początku każdego sprzątania.",
+        "data": {
+          "live_interval": "Pozycja robota co"
+        },
+        "data_description": {
+          "live_interval": "Domyślnie 1 s. Każdy odczyt to lokalne zapytanie do robota, nigdy przez chmurę; następne czeka na zakończenie poprzedniego."
+        }
+      }
+    }
   }
 }

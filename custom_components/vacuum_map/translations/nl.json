@@ -9,5 +9,19 @@
     "abort": {
       "no_roborock": "Stel eerst de Roborock-integratie in."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Live kaart",
+        "description": "Hoe vaak de robot en zijn route worden gelezen terwijl hij op het lokale netwerk reinigt. Kamers en muren worden aan het begin van elke reiniging volledig opnieuw gelezen.",
+        "data": {
+          "live_interval": "Robotpositie elke"
+        },
+        "data_description": {
+          "live_interval": "Standaard 1 s. Elke lezing is een lokaal verzoek aan de robot, nooit via de cloud; de volgende wacht tot de vorige klaar is."
+        }
+      }
+    }
   }
 }

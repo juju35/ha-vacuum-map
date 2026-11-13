@@ -9,5 +9,19 @@
     "abort": {
       "no_roborock": "Configura prima l'integrazione Roborock."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Mappa in diretta",
+        "description": "Ogni quanto vengono letti il robot e il suo percorso mentre pulisce sulla rete locale. Stanze e muri vengono riletti per intero all'inizio di ogni pulizia.",
+        "data": {
+          "live_interval": "Posizione del robot ogni"
+        },
+        "data_description": {
+          "live_interval": "1 s per impostazione predefinita. Ogni lettura è una richiesta locale al robot, mai tramite cloud; la successiva attende la fine della precedente."
+        }
+      }
+    }
   }
 }

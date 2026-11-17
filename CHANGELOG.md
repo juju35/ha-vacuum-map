@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.0 - 2026-11-17
+
+### Features
+- Animated illustrated header, 90 px: the title and "state · room" on the wall of a living room, the vacuum drawn at the right on a parquet strip, with the same pictures and model selection as ha-vacuum-card (robot with or without its LiDAR turret, with its dock or Clean Base when it has one). The picture follows the state: out on the floor while cleaning, sliding back to its dock when returning, at rest in its dock, a red alert on an error. The round icon takes the state's color (cleaning, docked, paused, error, idle).
+- Day and night: follows `sun.sun` (else the dark theme), forced with `illustration_theme: day | night`; `illustration: false` keeps the classic header. Animations stop with reduced motion.
+- The full screen button sits at the top left of the map, white by day and dark at night.
+- New options in the visual editor, translated in every language.
+
 ## 1.5.0 - 2026-11-13
 
 ### Improvements

@@ -37,6 +37,7 @@ Home Assistant integration and Lovelace card that draw a **clean, live map of yo
 - Dock, no-go and no-mop zones, virtual walls and, optionally, obstacles
 - Names too wide for a small room show the icon alone (the name stays as a tooltip)
 - **3D view**: walls raised from the map, floors in their colors, the robot moving on its path; drag to turn around, pinch or wheel to zoom (three.js, loaded only for the 3D view)
+- **Illustrated header**: the vacuum drawn in a living room (the same pictures as ha-vacuum-card: robot with or without its dock or Clean Base, by model), animated by its state — out cleaning, sliding back to its dock, docked, error; the icon color follows the state; day and night following the sun
 - **Full screen** button: the map at its largest, in 2D or 3D
 - Rotation by 90° steps, visual editor
 - **Little traffic**: the map is the one the official Roborock integration already fetches; only while a card is open on a vacuum cleaning on the local network is its map content read every second (configurable), never through the cloud
@@ -97,7 +98,9 @@ entity: vacuum.saros_20
 | `show_obstacles` | `false` | Obstacles seen by the vacuum |
 | `view` | `2d` | `2d` or `3d`: the view shown when the card opens |
 | `show_view_toggle` | `true` | **2D / 3D** button on the map |
-| `show_fullscreen` | `true` | Full screen button |
+| `show_fullscreen` | `true` | Full screen button (top left of the map with the illustrated header, in the header otherwise) |
+| `illustration` | `true` | Animated illustrated header: the vacuum (with its dock when it has one) in a living room, its state shown by the icon color and the picture; `false` keeps the classic header |
+| `illustration_theme` | auto | `day` or `night`; by default it follows `sun.sun`, else the dark theme |
 | `max_height` | `70vh` | Maximum height of the map (CSS length) |
 | `rooms` | — | Per room, by number or by name: `name`, `icon`, `color`, `hidden` (hides the label) |
 | `embedded` | `false` | The map alone, without card background nor header, for a card that shows it inside its own |

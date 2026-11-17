@@ -13,8 +13,8 @@ const context = {
 };
 context.window = context;
 vm.createContext(context);
-vm.runInContext(`${source}\nthis.api = { vmRoomIcon, vmLang, vmT, vmTone, vmEscape, VM_STRINGS };`, context);
-const { vmRoomIcon, vmLang, vmT, vmTone, vmEscape, VM_STRINGS } = context.api;
+vm.runInContext(`${source}\nthis.api = { vmRoomIcon, vmLang, vmT, vmTone, vmEscape, VM_STRINGS, vmIsNight, vmActivity, vmDevice, vmAutoSvg, vmPlace };`, context);
+const { vmRoomIcon, vmLang, vmT, vmTone, vmEscape, VM_STRINGS, vmIsNight, vmActivity, vmDevice, vmAutoSvg, vmPlace } = context.api;
 
 test('elements and card picker entry are defined once', () => {
   assert.ok(defined['vacuum-map-card']);
@@ -62,4 +62,25 @@ test('tone and escaping', () => {
   assert.equal(vmTone('docked'), 'ok');
   assert.equal(vmTone('error'), 'error');
   assert.equal(vmEscape('<b>"x"</b>'), '&lt;b&gt;&quot;x&quot;&lt;/b&gt;');
+});
+
+test('illustrated header: night, activity, device picture', () => {
+  assert.equal(vmIsNight({ states: { 'sun.sun': { state: 'below_horizon' } } }, {}), true);
+  assert.equal(vmIsNight({ states: { 'sun.sun': { state: 'above_horizon' } }, themes: { darkMode: true } }, {}), false);
+  assert.equal(vmIsNight({ states: {}, themes: { darkMode: true } }, {}), true);
+  assert.equal(vmIsNight({ states: { 'sun.sun': { state: 'below_horizon' } } }, { illustration_theme: 'day' }), false);
+  assert.equal(vmActivity('cleaning'), 'vacuum');
+  assert.equal(vmActivity('returning'), 'returning');
+  assert.equal(vmActivity('docked'), null);
+  const hass = {
+    states: {},
+    entities: { 'vacuum.s': { device_id: 'r', platform: 'roborock' } },
+    devices: { r: { name: 'Robot', model: 'roborock.vacuum.a70', identifiers: [['roborock', 'x']] }, d: { name: 'Robot Dock', identifiers: [['roborock', 'x_dock']] } },
+  };
+  const dev = vmDevice(hass, 'vacuum.s');
+  assert.deepEqual(Object.keys(dev.dock), ['d']);
+  const docked = vmAutoSvg(dev, null);
+  assert.match(docked, /viewBox="0 0 160 160"/); // the robot in front of its dock
+  assert.match(vmAutoSvg(dev, 'vacuum'), /viewBox="0 0 160 104"/); // out on the floor
+  assert.match(vmPlace(docked), /^left:[\d.]+%;top:[\d.]+%;width:[\d.]+%;height:[\d.]+%$/);
 });

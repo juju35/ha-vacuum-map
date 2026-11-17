@@ -14,8 +14,11 @@ customElements.define('ha-icon',class extends HTMLElement{static get observedAtt
 <script>
 const params=new URLSearchParams(location.search);document.body.className=params.get('theme')||'dark';
 fetch('demo.json').then(r=>r.json()).then(demo=>{
-  const hass={locale:{language:params.get('lang')||'en'},states:{'vacuum.saros':{state:'cleaning',attributes:{friendly_name:'Saros 20'}}},
-    formatEntityState:(s)=>({cleaning:'Cleaning'}[s.state]||s.state),
+  const state=params.get('state')||'cleaning';
+  const hass={locale:{language:params.get('lang')||'en'},themes:{darkMode:document.body.className==='dark'},states:{'vacuum.saros':{state,attributes:{friendly_name:'Saros 20'}}},
+    entities:{'vacuum.saros':{entity_id:'vacuum.saros',device_id:'robot',platform:'roborock'}},
+    devices:{robot:{name:'Saros 20',model:'roborock.vacuum.a70',identifiers:[['roborock','abc']]},dock:{name:'Saros 20 Dock',model:'roborock.vacuum.a70 Dock',identifiers:[['roborock','abc_dock']]}},
+    formatEntityState:(s)=>({cleaning:'Cleaning',docked:'Docked',returning:'Returning to dock',error:'Error'}[s.state]||s.state),
     connection:{subscribeMessage:(cb,msg)=>{window.lastMsg=msg;setTimeout(()=>cb(demo),30);
       const more=JSON.parse(JSON.stringify(demo.live));const p=more.path[0];const lx=p[p.length-2],ly=p[p.length-1];
       p.push(lx-40,ly,lx-40,ly+3,lx,ly+3);more.robot={x:lx,y:ly+3,a:0};

@@ -22,6 +22,22 @@ Home Assistant integration and Lovelace card that draw a **clean, live map of yo
   <img alt="Vacuum Map card, 3D view" src="https://raw.githubusercontent.com/juju35/ha-vacuum-map/main/screenshots/map-3d.png" width="480">
 </picture>
 
+### Animated header
+
+| State | Light | Dark |
+|---|---|---|
+| Cleaning | <img src="https://raw.githubusercontent.com/juju35/ha-vacuum-map/main/screenshots/header-cleaning.gif" alt="cleaning animation" width="400"> | <img src="https://raw.githubusercontent.com/juju35/ha-vacuum-map/main/screenshots/header-cleaning-dark.gif" alt="cleaning animation dark" width="400"> |
+| Returning to dock | <img src="https://raw.githubusercontent.com/juju35/ha-vacuum-map/main/screenshots/header-returning.gif" alt="returning animation" width="400"> | <img src="https://raw.githubusercontent.com/juju35/ha-vacuum-map/main/screenshots/header-returning-dark.gif" alt="returning animation dark" width="400"> |
+| Error | <img src="https://raw.githubusercontent.com/juju35/ha-vacuum-map/main/screenshots/header-error.gif" alt="error animation" width="400"> | <img src="https://raw.githubusercontent.com/juju35/ha-vacuum-map/main/screenshots/header-error-dark.gif" alt="error animation dark" width="400"> |
+| F25 Ultra cleaning (`model`) | <img src="https://raw.githubusercontent.com/juju35/ha-vacuum-map/main/screenshots/header-f25-cleaning.gif" alt="F25 Ultra cleaning animation" width="400"> | <img src="https://raw.githubusercontent.com/juju35/ha-vacuum-map/main/screenshots/header-f25-cleaning-dark.gif" alt="F25 Ultra cleaning animation dark" width="400"> |
+
+The header follows the model of the vacuum, or the one chosen with the `model` option (a few Roborock models, docked and cleaning):
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/juju35/ha-vacuum-map/main/screenshots/header-models-dark.png">
+  <img alt="Header with a few Roborock models" src="https://raw.githubusercontent.com/juju35/ha-vacuum-map/main/screenshots/header-models.png" width="480">
+</picture>
+
 ## Supported integrations
 
 | Integration | Vacuums |
@@ -37,6 +53,7 @@ Home Assistant integration and Lovelace card that draw a **clean, live map of yo
 - Dock, no-go and no-mop zones, virtual walls and, optionally, obstacles
 - Names too wide for a small room show the icon alone (the name stays as a tooltip)
 - **3D view**: walls raised from the map, floors in their colors, the robot moving on its path; drag to turn around, pinch or wheel to zoom (three.js, loaded only for the 3D view)
+- **Illustrated header**: the vacuum drawn in a living room (the same pictures as ha-vacuum-card: robot with or without its dock or Clean Base, by model, or the Roborock model chosen with `model`), animated by its state — out cleaning, sliding back to its dock, docked, error; the icon color follows the state; day and night following the sun
 - **Full screen** button: the map at its largest, in 2D or 3D
 - Rotation by 90° steps, visual editor
 - **Little traffic**: the map is the one the official Roborock integration already fetches; only while a card is open on a vacuum cleaning on the local network is its map content read every second (configurable), never through the cloud
@@ -97,7 +114,10 @@ entity: vacuum.saros_20
 | `show_obstacles` | `false` | Obstacles seen by the vacuum |
 | `view` | `2d` | `2d` or `3d`: the view shown when the card opens |
 | `show_view_toggle` | `true` | **2D / 3D** button on the map |
-| `show_fullscreen` | `true` | Full screen button |
+| `show_fullscreen` | `true` | Full screen button (top left of the map with the illustrated header, in the header otherwise) |
+| `illustration` | `true` | Animated illustrated header: the vacuum (with its dock when it has one) in a living room, its state shown by the icon color and the picture; `false` keeps the classic header |
+| `illustration_theme` | auto | `day` or `night`; by default night when `sun.sun` is below the horizon or with the dark theme, even while the sun is up |
+| `model` | `auto` | Robot drawn in the header: `auto` (from the model of the vacuum's device) or a Roborock model id to draw that model, e.g. `roborock.vacuum.a75` (Qrevo), `roborock.vacuum.a143` (Saros 10R), `roborock.wdv.a194` (F25 Ultra) — the visual editor lists the Roborock models by name |
 | `max_height` | `70vh` | Maximum height of the map (CSS length) |
 | `rooms` | — | Per room, by number or by name: `name`, `icon`, `color`, `hidden` (hides the label) |
 | `embedded` | `false` | The map alone, without card background nor header, for a card that shows it inside its own |
@@ -129,7 +149,7 @@ To report a rendering issue, attach the diagnostics of the integration (**Settin
 ```bash
 pip install -r requirements_test.txt && pytest       # integration tests
 node --test test/*.test.mjs                          # card tests
-python scripts/screenshots.py                        # screenshots/ from a made-up apartment (scripts/demo_map.py)
+python scripts/screenshots.py                        # screenshots/ (stills and header GIFs, needs ffmpeg) from a made-up apartment (scripts/demo_map.py)
 ```
 
 The card is plain JavaScript (`custom_components/vacuum_map/frontend/vacuum-map-card.js`), served by the integration: no build step. The 3D view uses a subset of three.js, `frontend/vendor/three.min.js`, rebuilt with `npm install --no-save three esbuild && node scripts/build-three.mjs`.

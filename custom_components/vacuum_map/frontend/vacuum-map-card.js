@@ -607,7 +607,32 @@ ha-card.ill > .body { padding: 8px 10px 12px; }
   background: repeating-linear-gradient(90deg, #c99a6b 0 38px, #b98a5c 38px 40px); box-shadow: inset 0 2px 0 #a97c50; }
 .night .vm-ground { background: repeating-linear-gradient(90deg, #4a3a2c 0 38px, #3e3024 38px 40px); box-shadow: inset 0 2px 0 #5c4836; }
 .htext { position: absolute; left: 14px; top: 0; bottom: 10px; right: calc(var(--vm-scene-w) + 4px); display: flex; align-items: center; gap: 10px; min-width: 0; }
+.htext .titles { min-width: 0; }
 .htext .sub { font-size: 13px; color: #3b5b78; }
+/* Status pill right after the title, in the state's colour on a frosted tint; the title is cut first (about four
+   characters kept). When it does not fit there (measured by the card, or a narrow card) it goes on its own line
+   under the subtitle, where it may run over the left of the scene. */
+.trow { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.trow .title { flex: 0 100 auto; min-width: 4ch; }
+.chip { --c: var(--vm-tone); display: inline-flex; align-items: center; gap: 4px; flex: 0 1 auto; min-width: 0; max-width: 51%;
+  box-sizing: border-box; overflow: hidden; white-space: nowrap; padding: 1px 8px; border-radius: 12px; font-size: 11px; font-weight: 500;
+  line-height: 16px; background: color-mix(in srgb, var(--c) 18%, rgba(255,255,255,.78)); color: color-mix(in srgb, var(--c) 45%, #0d2a45); }
+.night .chip { background: color-mix(in srgb, var(--c) 30%, rgba(8,18,38,.55)); color: color-mix(in srgb, var(--c) 35%, #ffffff); }
+.chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--c); flex: none; }
+.chip-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.banner[data-wrap] .titles { display: flex; flex-direction: column; }
+.banner[data-wrap] .trow { display: contents; }
+.banner[data-wrap] .chip { order: 9; align-self: flex-start; max-width: calc(100cqw - 80px); margin-top: 3px; }
+@container (max-width: 260px) {
+  .banner .titles { display: flex; flex-direction: column; }
+  .banner .trow { display: contents; }
+  .banner .chip { order: 9; align-self: flex-start; max-width: calc(100cqw - 80px); margin-top: 3px; }
+}
+/* Very narrow: the dot alone (the state stays in the tooltip and for screen readers). */
+@container (max-width: 200px) {
+  .chip { padding: 0; background: none; }
+  .chip-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+}
 .night .htext .sub { color: rgba(255,255,255,.78); }
 .banner .badge { background: rgba(255,255,255,.62); box-shadow: inset 0 0 0 1px rgba(47,128,237,.18); }
 .banner.night .badge { background: rgba(255,255,255,.12); box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); }
@@ -1187,6 +1212,8 @@ class VacuumMapCard extends HTMLElement {
     if (this._hass && !this._unsub) this._subscribe();
     const box = this.shadowRoot?.querySelector('.labels');
     if (this._resize && box) this._resize.observe(box);
+    const card = this.shadowRoot?.querySelector('ha-card');
+    if (this._pillResize && card) this._pillResize.observe(card);
     if (this._anim && !this._raf) this._raf = requestAnimationFrame((t) => this._frame(t));
   }
 
@@ -1200,6 +1227,7 @@ class VacuumMapCard extends HTMLElement {
       if (this.isConnected) return;
       this._unsubscribe();
       this._resize?.disconnect();
+      this._pillResize?.disconnect();
       this._scene?.dispose(); // frees its WebGL context (a page only gets a few)
       this._scene = null;
       this.closeFullscreen();
@@ -1368,7 +1396,8 @@ class VacuumMapCard extends HTMLElement {
     return !this._embedded && this._config.illustration !== false;
   }
 
-  // The banner: the badge (its color is the vacuum's state), the title and "status · room" on the wall at the left,
+  // The banner: the badge (its color is the vacuum's state), the title with the status pill and the room on the wall
+  // at the left,
   // the vacuum drawn at the right, on the parquet strip
   _banner() {
     const stateObj = this._hass.states[this._config.entity];
@@ -1376,14 +1405,16 @@ class VacuumMapCard extends HTMLElement {
     const night = vmIsNight(this._hass, this._config);
     const title = this._config.title || stateObj?.attributes?.friendly_name || this._config.entity || '';
     const status = stateObj ? (this._hass.formatEntityState?.(stateObj) ?? state) : '';
-    const sub = [status, this._geometry ? this._subtitle() : ''].filter(Boolean).join(' · ');
+    const sub = this._geometry ? this._subtitle() : '';
     const art = this._art(state);
     const alert = vmTone(state) === 'error' && stateObj ? '<div class="vm-alert" aria-hidden="true">!</div>' : '';
     const html = `<div class="banner${night ? ' night' : ''}">
       <div class="vm-scene">${vmSceneSvg(night)}${art}${alert}</div>
       <div class="vm-ground" aria-hidden="true"></div>
       <div class="htext"><div class="badge"><ha-icon icon="mdi:robot-vacuum"></ha-icon></div>
-        <div class="titles"><div class="title">${vmEscape(title)}</div>${sub ? `<div class="sub">${vmEscape(sub)}</div>` : ''}</div></div>
+        <div class="titles"><div class="trow"><div class="title">${vmEscape(title)}</div>${
+          status ? `<span class="chip" title="${vmEscape(status)}"><span class="dot"></span><span class="chip-text">${vmEscape(status)}</span></span>` : ''
+        }</div>${sub ? `<div class="sub">${vmEscape(sub)}</div>` : ''}</div></div>
     </div>`;
     return { tone: vmToneColor(state), html, night };
   }
@@ -1430,7 +1461,30 @@ class VacuumMapCard extends HTMLElement {
     card?.classList.toggle('ill', ill);
     card?.classList.toggle('night', night);
     head.innerHTML = html;
+    // A new width fits the status pill again (the banner keeps its height: no resize loop)
+    if (ill && card && !this._pillResize) {
+      this._pillResize = new ResizeObserver(() => this._fitPill());
+      this._pillResize.observe(card);
+    }
+    this._fitPill();
     head.querySelector('[data-action="fullscreen"]')?.addEventListener('click', () => this.openFullscreen());
+  }
+
+  // The banner's status pill goes on its own line under the subtitle when it is cut next to the title
+  _fitPill() {
+    const banner = this.shadowRoot?.querySelector('.banner');
+    const text = banner?.querySelector('.trow .chip-text');
+    if (!text) return;
+    banner.removeAttribute('data-wrap');
+    // Fractional widths: scrollWidth / clientWidth are rounded and miss a label cut by less than a pixel.
+    const chip = text.parentElement;
+    const have = chip.getBoundingClientRect().width;
+    chip.style.maxWidth = 'none';
+    chip.style.flex = 'none';
+    const need = chip.getBoundingClientRect().width;
+    chip.style.maxWidth = '';
+    chip.style.flex = '';
+    if (need > have + 0.01) banner.setAttribute('data-wrap', '');
   }
 
   // ── full screen (like the weather card): a sheet over the page with the map at its largest ──

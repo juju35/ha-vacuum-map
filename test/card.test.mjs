@@ -106,3 +106,15 @@ test('robot on the floor: sized like the docked robot, standing on the floor, no
   assert.ok(floor.left + floor.width <= 100);
   assert.ok(Math.abs(floor.top + (floor.height * 88) / 104 - 100) < 0.1); // its box stands on the floor (y 80)
 });
+
+test('banner: the status pill follows the title, at most about half of its row, on its own line when it does not fit', () => {
+  const pill = source.match(/\n\.chip \{[^}]*\}/)?.[0] ?? '';
+  assert.match(pill, /max-width: 51%/);
+  assert.match(pill, /font-size: 11px/);
+  assert.match(source, /\.trow \.title \{ flex: 0 100 auto; min-width: 4ch; \}/);
+  assert.match(source, /\.banner\[data-wrap\] \.trow \{ display: contents; \}/);
+  assert.match(source, /@container \(max-width: 260px\) \{\n {2}\.banner \.titles/);
+  assert.match(source, /class="chip" title="\$\{vmEscape\(status\)\}"/);
+  // the status is in the pill, not repeated in the subtitle
+  assert.doesNotMatch(source, /\[status, this\._geometry/);
+});

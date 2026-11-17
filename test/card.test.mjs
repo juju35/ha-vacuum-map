@@ -13,8 +13,8 @@ const context = {
 };
 context.window = context;
 vm.createContext(context);
-vm.runInContext(`${source}\nthis.api = { vmRoomIcon, vmLang, vmT, vmTone, vmEscape, VM_STRINGS, vmIsNight, vmActivity, vmDevice, vmAutoSvg, vmPlace };`, context);
-const { vmRoomIcon, vmLang, vmT, vmTone, vmEscape, VM_STRINGS, vmIsNight, vmActivity, vmDevice, vmAutoSvg, vmPlace } = context.api;
+vm.runInContext(`${source}\nthis.api = { vmRoomIcon, vmLang, vmT, vmTone, vmEscape, VM_STRINGS, vmIsNight, vmActivity, vmDevice, vmAutoSvg, vmPlace, VM_ROBOROCK_MODELS, vmModelDevice };`, context);
+const { vmRoomIcon, vmLang, vmT, vmTone, vmEscape, VM_STRINGS, vmIsNight, vmActivity, vmDevice, vmAutoSvg, vmPlace, VM_ROBOROCK_MODELS, vmModelDevice } = context.api;
 
 test('elements and card picker entry are defined once', () => {
   assert.ok(defined['vacuum-map-card']);
@@ -83,4 +83,26 @@ test('illustrated header: night, activity, device picture', () => {
   assert.match(docked, /viewBox="0 0 160 160"/); // the robot in front of its dock
   assert.match(vmAutoSvg(dev, 'vacuum'), /viewBox="0 0 160 104"/); // out on the floor
   assert.match(vmPlace(docked), /^left:[\d.]+%;top:[\d.]+%;width:[\d.]+%;height:[\d.]+%$/);
+});
+
+test('model option: Roborock models, drawn like the device', () => {
+  const values = VM_ROBOROCK_MODELS.map((o) => o.value);
+  assert.ok(values.includes('roborock.vacuum.a75') && values.includes('roborock.wdv.a194'));
+  assert.ok(VM_ROBOROCK_MODELS.every((o) => /^Roborock /.test(o.label)));
+  assert.ok(!values.some((v) => /^(dreame|xiaomi|deebot)/.test(v) || v === 'rockrobo.vacuum.v1'));
+  assert.equal(new Set(VM_ROBOROCK_MODELS.map((o) => o.label)).size, VM_ROBOROCK_MODELS.length);
+  assert.match(vmAutoSvg(vmModelDevice('roborock.wdv.a194'), null), /viewBox="0 0 100 200"/); // F25 Ultra: upright
+  assert.match(vmAutoSvg(vmModelDevice('roborock.vacuum.a75'), null), /viewBox="0 0 160 160"/); // Qrevo: in its dock
+  assert.match(vmAutoSvg(vmModelDevice('roborock.vacuum.a38'), null), /viewBox="0 0 160 104"/); // Q7 Max: no dock
+});
+
+test('robot on the floor: sized like the docked robot, standing on the floor, not clipped', () => {
+  const dev = vmModelDevice('roborock.vacuum.a143');
+  const n = (svg) => Object.fromEntries(vmPlace(svg).split(';').map((kv) => kv.split(':')).map(([k, v]) => [k, parseFloat(v)]));
+  const floor = n(vmAutoSvg(dev, 'vacuum'));
+  // 160 × 104 drawing, robot box 8…152 × 27…88: robot about 29 % of the scene width, at most 45 % of its height
+  assert.ok((floor.width * 144) / 160 <= 30, `robot ${floor.width}`);
+  assert.ok((floor.height * 61) / 104 <= 45);
+  assert.ok(floor.left + floor.width <= 100);
+  assert.ok(Math.abs(floor.top + (floor.height * 88) / 104 - 100) < 0.1); // its box stands on the floor (y 80)
 });

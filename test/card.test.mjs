@@ -112,14 +112,19 @@ test('robot on the floor: sized like the docked robot, standing on the floor, no
   assert.ok(Math.abs(floor.top + (floor.height * 88) / 104 - 100) < 0.1); // its box stands on the floor (y 80)
 });
 
-test('banner: the status pill follows the title, at most about half of its row, on its own line when it does not fit', () => {
+test('status pill: after the whole title, else under the subtitle, else its dot; measured, in both headers', () => {
   const pill = source.match(/\n\.chip \{[^}]*\}/)?.[0] ?? '';
-  assert.match(pill, /max-width: 51%/);
   assert.match(pill, /font-size: 11px/);
-  assert.match(source, /\.trow \.title \{ flex: 0 100 auto; min-width: 4ch; \}/);
-  assert.match(source, /\.banner\[data-wrap\] \.trow \{ display: contents; \}/);
-  assert.match(source, /@container \(max-width: 260px\) \{\n {2}\.banner \.titles/);
-  assert.match(source, /class="chip" title="\$\{vmEscape\(status\)\}"/);
+  // On the title row only with the whole title beside it; under the (one-line) subtitle otherwise; no fixed threshold
+  assert.match(source, /\.titles \.trow > \.title \{ flex: 0 1 auto; min-width: 0; \}/);
+  assert.match(source, /\.titles\.below \.trow \{ display: contents; \}/);
+  assert.match(source, /\.titles\.below :is\(\.sub\) \{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; \}/);
+  assert.match(source, /@container \(max-width: 200px\) \{ \.titles \.trow > \.chip \{ padding: 4px; \}/);
+  assert.doesNotMatch(source, /max-width: 260px|data-wrap|min-width: 4ch/);
+  assert.match(source, /_fitPill\(root = this\.shadowRoot\)/);
+  assert.match(source, /class="chip" title="\$\{vmEscape\(status\)\}" aria-label="\$\{vmEscape\(status\)\}"/);
+  // the classic header (and the full screen one) has the same pill on its title row
+  assert.match(source, /<div class="trow"><div class="title">\$\{vmEscape\(title\)\}<\/div>\$\{\n {8}status \? `<span class="chip flat"/);
   // the status is in the pill, not repeated in the subtitle
   assert.doesNotMatch(source, /\[status, this\._geometry/);
 });

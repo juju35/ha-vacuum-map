@@ -605,32 +605,15 @@ ha-card.ill > .body { padding: 8px 10px 12px; }
   background: repeating-linear-gradient(90deg, #c99a6b 0 38px, #b98a5c 38px 40px); box-shadow: inset 0 2px 0 #a97c50; }
 .night .vm-ground { background: repeating-linear-gradient(90deg, #4a3a2c 0 38px, #3e3024 38px 40px); box-shadow: inset 0 2px 0 #5c4836; }
 .htext { position: absolute; left: 14px; top: 0; bottom: 10px; right: calc(var(--vm-scene-w) + 4px); display: flex; align-items: center; gap: 10px; min-width: 0; }
-.htext .titles { min-width: 0; }
+.htext .titles { flex: 1 1 0; min-width: 0; }
 .htext .sub { font-size: 13px; color: #3b5b78; }
-/* Status pill right after the title, in the state's colour on a frosted tint; the title is cut first (about four
-   characters kept). When it does not fit there (measured by the card, or a narrow card) it goes on its own line
-   under the subtitle, where it may run over the left of the scene. */
-.trow { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.trow .title { flex: 0 100 auto; min-width: 4ch; }
+/* Status pill in the state's colour on a frosted tint (where it goes: see the rule below and _fitPill). */
 .chip { --c: var(--vm-tone); display: inline-flex; align-items: center; gap: 4px; flex: 0 1 auto; min-width: 0; max-width: 51%;
   box-sizing: border-box; overflow: hidden; white-space: nowrap; padding: 1px 8px; border-radius: 12px; font-size: 11px; font-weight: 500;
   line-height: 16px; background: color-mix(in srgb, var(--c) 18%, rgba(255,255,255,.78)); color: color-mix(in srgb, var(--c) 45%, #0d2a45); }
 .night .chip { background: color-mix(in srgb, var(--c) 30%, rgba(8,18,38,.55)); color: color-mix(in srgb, var(--c) 35%, #ffffff); }
 .chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--c); flex: none; }
 .chip-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.banner[data-wrap] .titles { display: flex; flex-direction: column; }
-.banner[data-wrap] .trow { display: contents; }
-.banner[data-wrap] .chip { order: 9; align-self: flex-start; max-width: calc(100cqw - 80px); margin-top: 3px; }
-@container (max-width: 260px) {
-  .banner .titles { display: flex; flex-direction: column; }
-  .banner .trow { display: contents; }
-  .banner .chip { order: 9; align-self: flex-start; max-width: calc(100cqw - 80px); margin-top: 3px; }
-}
-/* Very narrow: the dot alone (the state stays in the tooltip and for screen readers). */
-@container (max-width: 200px) {
-  .chip { padding: 0; background: none; }
-  .chip-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-}
 .night .htext .sub { color: rgba(255,255,255,.78); }
 .banner .badge { background: rgba(255,255,255,.62); box-shadow: inset 0 0 0 1px rgba(47,128,237,.18); }
 .banner.night .badge { background: rgba(255,255,255,.12); box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); }
@@ -1095,7 +1078,7 @@ const VM_FULL_STYLE = `
 
 const VM_STYLE = `
 :host { display: block; }
-ha-card { padding: 16px; overflow: hidden; }
+ha-card { padding: 16px; overflow: hidden; container-type: inline-size; }
 .head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
 .badge { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
   flex: none; background: color-mix(in srgb, var(--vm-tone) 18%, transparent); color: var(--vm-tone); }
@@ -1105,6 +1088,29 @@ ha-card { padding: 16px; overflow: hidden; }
 .sub { font-size: 12px; color: var(--secondary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pill { flex: none; font-size: 12px; padding: 3px 10px; border-radius: 999px; color: var(--vm-tone);
   background: color-mix(in srgb, var(--vm-tone) 14%, transparent); }
+/* The classic header's status pill: a dot and the state, in the state's colour. */
+.chip.flat { --c: var(--vm-tone); display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 12px; font-size: 11px;
+  font-weight: 500; line-height: 16px; white-space: nowrap; overflow: hidden; box-sizing: border-box;
+  background: color-mix(in srgb, var(--c) 15%, transparent); color: color-mix(in srgb, var(--c) 55%, var(--primary-text-color)); }
+.chip.flat .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--c); flex: none; }
+.chip.flat .chip-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  /* The status pill, in every header: on the title row right after the title only when the whole title and the pill's
+     whole label fit there; otherwise on its own line under the subtitle, cut to one line; its dot alone, beside the
+     title, when the banner has no room left above its ground strip, or on a card of 200 px or less. Decided by
+     measurement (see _fitPill), so that every language and every width gets it right. */
+  .titles .trow { display: flex; align-items: center; gap: 8px; min-width: 0; width: 100%; }
+  .titles .trow > .title { flex: 0 1 auto; min-width: 0; }
+  .titles .trow > .chip { flex: none; max-width: none; margin: 0; align-self: center; }
+  .titles.below { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
+  .titles.below > * { max-width: 100%; }
+  .titles.below .trow { display: contents; }
+  .titles.below .trow > .title { max-width: 100%; }
+  .titles.below .trow > .chip { order: 9; max-width: 100%; margin-top: 2px; align-self: flex-start; }
+  /* In the banner, a pill on its own line may run over the picture, up to the banner's edge. */
+  .banner .titles.below .trow > .chip { max-width: none; }
+  .titles.below :is(.sub) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .titles.dotonly .trow > .chip { padding: 4px; } .titles.dotonly .trow > .chip .chip-text { display: none; }
+  @container (max-width: 200px) { .titles .trow > .chip { padding: 4px; } .titles .trow > .chip .chip-text { display: none; } }
 .map { position: relative; width: 100%; margin: 0 auto; }
 .map > svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .labels { position: absolute; inset: 0; pointer-events: none; }
@@ -1384,8 +1390,9 @@ class VacuumMapCard extends HTMLElement {
     const status = stateObj ? (this._hass.formatEntityState?.(stateObj) ?? state) : '';
     const sub = this._geometry ? this._subtitle() : '';
     const html = `<div class="badge"><ha-icon icon="mdi:robot-vacuum"></ha-icon></div>
-      <div class="titles"><div class="title">${vmEscape(title)}</div>${sub ? `<div class="sub">${vmEscape(sub)}</div>` : ''}</div>
-      ${status ? `<div class="pill">${vmEscape(status)}</div>` : ''}${buttons}`;
+      <div class="titles"><div class="trow"><div class="title">${vmEscape(title)}</div>${
+        status ? `<span class="chip flat" title="${vmEscape(status)}" aria-label="${vmEscape(status)}"><span class="dot"></span><span class="chip-text">${vmEscape(status)}</span></span>` : ''
+      }</div>${sub ? `<div class="sub" title="${vmEscape(sub)}">${vmEscape(sub)}</div>` : ''}</div>${buttons}`;
     return { tone, html };
   }
 
@@ -1411,8 +1418,8 @@ class VacuumMapCard extends HTMLElement {
       <div class="vm-ground" aria-hidden="true"></div>
       <div class="htext"><div class="badge"><ha-icon icon="mdi:robot-vacuum"></ha-icon></div>
         <div class="titles"><div class="trow"><div class="title">${vmEscape(title)}</div>${
-          status ? `<span class="chip" title="${vmEscape(status)}"><span class="dot"></span><span class="chip-text">${vmEscape(status)}</span></span>` : ''
-        }</div>${sub ? `<div class="sub">${vmEscape(sub)}</div>` : ''}</div></div>
+          status ? `<span class="chip" title="${vmEscape(status)}" aria-label="${vmEscape(status)}"><span class="dot"></span><span class="chip-text">${vmEscape(status)}</span></span>` : ''
+        }</div>${sub ? `<div class="sub" title="${vmEscape(sub)}">${vmEscape(sub)}</div>` : ''}</div></div>
     </div>`;
     return { tone: vmToneColor(state), html, night };
   }
@@ -1459,30 +1466,56 @@ class VacuumMapCard extends HTMLElement {
     card?.classList.toggle('ill', ill);
     card?.classList.toggle('night', night);
     head.innerHTML = html;
-    // A new width fits the status pill again (the banner keeps its height: no resize loop)
-    if (ill && card && !this._pillResize) {
-      this._pillResize = new ResizeObserver(() => this._fitPill());
+    // A new width (or the web font loaded) fits the status pill again, in the next frame
+    if (card && !this._pillResize && typeof ResizeObserver === 'function') {
+      this._pillResize = new ResizeObserver(() => {
+        cancelAnimationFrame(this._fitFrame);
+        this._fitFrame = requestAnimationFrame(() => this._fitPill());
+      });
       this._pillResize.observe(card);
+      document.fonts?.ready?.then(() => this._fitPill());
     }
     this._fitPill();
     head.querySelector('[data-action="fullscreen"]')?.addEventListener('click', () => this.openFullscreen());
   }
 
-  // The banner's status pill goes on its own line under the subtitle when it is cut next to the title
-  _fitPill() {
-    const banner = this.shadowRoot?.querySelector('.banner');
-    const text = banner?.querySelector('.trow .chip-text');
-    if (!text) return;
-    banner.removeAttribute('data-wrap');
-    // Fractional widths: scrollWidth / clientWidth are rounded and miss a label cut by less than a pixel.
-    const chip = text.parentElement;
-    const have = chip.getBoundingClientRect().width;
-    chip.style.maxWidth = 'none';
-    chip.style.flex = 'none';
-    const need = chip.getBoundingClientRect().width;
-    chip.style.maxWidth = '';
-    chip.style.flex = '';
-    if (need > have + 0.01) banner.setAttribute('data-wrap', '');
+  // The status pill goes right after the title only when the whole title and the pill's whole label fit on that row;
+  // otherwise it takes a line of its own under the subtitle (.titles.below, the subtitle cut to one line). In the
+  // banner (where that line may run over the picture), when the titles still run below the top of the ground strip or
+  // out of the banner, and in the classic header when the label does not fit even alone, the pill keeps its dot alone,
+  // beside the title (.titles.dotonly). Measured in fractional pixels.
+  _fitPill(root = this.shadowRoot) {
+    for (const t of root?.querySelectorAll?.('.titles') || []) {
+      const row = t.querySelector('.trow');
+      const chips = row ? [...row.querySelectorAll(':scope > .chip')] : [];
+      if (!chips.length || !row.getBoundingClientRect) continue;
+      t.classList.remove('below', 'dotonly');
+      const name = row.querySelector(':scope > .title');
+      const gap = parseFloat(getComputedStyle(row).columnGap) || 0;
+      const widths = chips.map((c) => c.getBoundingClientRect().width);
+      let need = -gap;
+      if (name && getComputedStyle(name).display !== 'none') {
+        name.style.flex = 'none';
+        need = name.getBoundingClientRect().width;
+        name.style.flex = '';
+      }
+      for (const w of widths) need += gap + w;
+      const room = row.getBoundingClientRect().width + 0.01;
+      if (need <= room) continue;
+      t.classList.add('below');
+      const banner = t.closest('.banner');
+      const cut = !banner && widths.some((w) => w > room);
+      let out = false;
+      if (banner) {
+        const b = banner.getBoundingClientRect();
+        const floor = b.bottom - (banner.querySelector('.vm-ground')?.getBoundingClientRect().height ?? 10) + 0.5;
+        out = [...t.querySelectorAll('.title, .sub, .chip')].some((e) => {
+          const r = e.getBoundingClientRect();
+          return r.height && (r.bottom > floor || r.top < b.top - 0.5 || r.right > b.right + 0.5);
+        });
+      }
+      if (cut || out) t.classList.replace('below', 'dotonly');
+    }
   }
 
   // ── full screen (like the weather card): a sheet over the page with the map at its largest ──
@@ -1547,6 +1580,7 @@ class VacuumMapCard extends HTMLElement {
     this._fullKey = html;
     this._full.style.setProperty('--vm-tone', tone);
     head.innerHTML = html;
+    this._fitPill(this._full.shadowRoot);
   }
 
   _subtitle() {

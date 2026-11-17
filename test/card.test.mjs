@@ -65,8 +65,10 @@ test('tone and escaping', () => {
 });
 
 test('illustrated header: night, activity, device picture', () => {
-  assert.equal(vmIsNight({ states: { 'sun.sun': { state: 'below_horizon' } } }, {}), true);
-  // The dark theme gives the night picture even while the sun is up; a light theme keeps the day; forced wins.
+  // The theme alone decides: a light theme keeps the day after sunset, a dark one gives the night even while the sun
+  // is up; forced wins.
+  assert.equal(vmIsNight({ states: { 'sun.sun': { state: 'below_horizon' } } }, {}), false);
+  assert.equal(vmIsNight({ states: { 'sun.sun': { state: 'below_horizon' } }, themes: { darkMode: true } }, {}), true);
   assert.equal(vmIsNight({ states: { 'sun.sun': { state: 'above_horizon' } }, themes: { darkMode: true } }, {}), true);
   assert.equal(vmIsNight({ states: { 'sun.sun': { state: 'above_horizon' } }, themes: { darkMode: false } }, {}), false);
   assert.equal(vmIsNight({ states: { 'sun.sun': { state: 'unavailable' } }, themes: { darkMode: false } }, {}), false);

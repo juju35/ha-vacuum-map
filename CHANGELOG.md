@@ -4,7 +4,7 @@
 
 ### Features
 - Animated illustrated header, 90 px: the title with the state as a status pill right after it (dot and label in the state's colour on a frosted tint, on its own line under the room when it does not fit) and the room being cleaned on the wall of a living room, the vacuum drawn at the right on a parquet strip, with the same pictures and model selection as ha-vacuum-card (robot with or without its LiDAR turret, with its dock or Clean Base when it has one). The picture follows the state: out on the floor while cleaning, sliding back to its dock when returning, at rest in its dock, a red alert on an error. The round icon takes the state's color (cleaning, docked, paused, error, idle).
-- Day and night: follows `sun.sun` (else the dark theme), forced with `illustration_theme: day | night`; `illustration: false` keeps the classic header. Animations stop with reduced motion.
+- Day and night: night when `sun.sun` is below the horizon or with the dark theme (even while the sun is up), forced with `illustration_theme: day | night`; `illustration: false` keeps the classic header. Animations stop with reduced motion.
 - The full screen button sits at the top left of the map, white by day and dark at night.
 - `model` option: the Roborock model drawn in the header (`auto` from the vacuum's device, or a model id such as `roborock.vacuum.a75` for the Qrevo), listed by name in the visual editor.
 - The robot out cleaning is drawn about the size of the robot in its dock, no longer dominating the banner.

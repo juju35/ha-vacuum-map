@@ -523,15 +523,13 @@ const vmAutoSvg = (dev, activity = null, white = undefined) => {
 // ── Illustrated header ("banner", 90 px) ──────────────────────────────────
 // The title on the wall of a living room at the left, the vacuum drawn at the right (the same pictures and model
 // selection as ha-vacuum-card: robot with or without its dock or Clean Base, animated by what it does), on a 10 px
-// parquet strip edge to edge. Day or night: illustration_theme, else the sun, else Home Assistant's dark mode.
-const VM_NO_VALUE = new Set(['unknown', 'unavailable', '']);
+// parquet strip edge to edge. Day or night: illustration_theme, else night with the sun below the horizon or Home
+// Assistant's dark theme (an unknown or unavailable sun leaves the theme alone to decide).
 function vmIsNight(hass, config) {
   const theme = config?.illustration_theme;
   if (theme === 'night') return true;
   if (theme === 'day') return false;
-  const sun = hass?.states?.['sun.sun'];
-  if (sun && !VM_NO_VALUE.has(String(sun.state))) return sun.state === 'below_horizon';
-  return !!hass?.themes?.darkMode;
+  return hass?.states?.['sun.sun']?.state === 'below_horizon' || !!hass?.themes?.darkMode;
 }
 
 // The living room (200 × 80, its floor at y 80): a sofa and a floor lamp (lit at night), zoomed in from its bottom

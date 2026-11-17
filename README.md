@@ -116,7 +116,7 @@ entity: vacuum.saros_20
 | `show_view_toggle` | `true` | **2D / 3D** button on the map |
 | `show_fullscreen` | `true` | Full screen button (top left of the map with the illustrated header, in the header otherwise) |
 | `illustration` | `true` | Animated illustrated header: the vacuum (with its dock when it has one) in a living room, its state shown by the icon color and the picture; `false` keeps the classic header |
-| `illustration_theme` | auto | `day` or `night`; by default it follows `sun.sun`, else the dark theme |
+| `illustration_theme` | auto | `day` or `night`; by default night when `sun.sun` is below the horizon or with the dark theme, even while the sun is up |
 | `model` | `auto` | Robot drawn in the header: `auto` (from the model of the vacuum's device) or a Roborock model id to draw that model, e.g. `roborock.vacuum.a75` (Qrevo), `roborock.vacuum.a143` (Saros 10R), `roborock.wdv.a194` (F25 Ultra) — the visual editor lists the Roborock models by name |
 | `max_height` | `70vh` | Maximum height of the map (CSS length) |
 | `rooms` | — | Per room, by number or by name: `name`, `icon`, `color`, `hidden` (hides the label) |

@@ -1,0 +1,120 @@
+name: Screenshots
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "custom_components/vacuum_map/frontend/**"
+      - "custom_components/vacuum_map/geometry.py"
+      - "scripts/**"
+      - "tests/maps.py"
+      - ".github/workflows/screenshots.yml"
+
+# Protected main is never pushed to: the job commits the refreshed screenshots
+# back onto the pull request's own branch, so they land through the normal merge.
+# The push uses the juju35-screenshots GitHub App token, not GITHUB_TOKEN: a push made with
+# GITHUB_TOKEN starts no workflow, which left the required checks "Expected" on the bot commit.
+permissions:
+  contents: read
+
+concurrency:
+  group: screenshots-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  screenshots:
+    name: Render screenshots
+    # The bot's own screenshots commit re-triggers this workflow: skip it (a skipped job counts as passed),
+    # so a render that is not byte-identical can never loop.
+    if: github.actor != 'juju35-screenshots[bot]'
+    runs-on: ubuntu-latest
+    env:
+      # Without the App's secrets (a fork, or before they are set) the screenshots are still rendered, not pushed.
+      HAS_APP: ${{ secrets.APP_ID != '' }}
+    # Debian 12 container (Python 3.13 included): apt goes to the Debian mirrors, not the runner's Ubuntu ones, which
+    # kept hanging. The job runs as root, hence no sudo below.
+    container: python:3.13-bookworm
+    # In a container, run steps default to sh (dash, no pipefail): keep bash.
+    defaults:
+      run:
+        shell: bash
+    steps:
+      # Same-repo PRs only (fork and Dependabot runs get no Actions secrets): they are the ones pushed back to.
+      - name: App token
+        id: app-token
+        if: env.HAS_APP == 'true' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]'
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The checkout keeps this token for the push below: the App's push triggers the PR checks.
+          token: ${{ steps.app-token.outputs.token || github.token }}
+          # Fork PR branches do not exist in this repository: only check out the
+          # head branch for same-repo PRs (where screenshots get pushed back).
+          # Everything else keeps the default ref — for a fork PR that is the merge
+          # ref, which github.ref_name ("N/merge") does not resolve to.
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref || '' }}
+      # The workspace is owned by another user than the container's root: let git work in it (commit step).
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      # Pinned so the rendered screenshots only change when the card does, not with each Playwright/Chromium release.
+      - run: pip install playwright==1.64.1
+      # Download the browser binary (no apt here) separately from its system libraries, so the apt work all sits in
+      # the one time-boxed, retried step below and a hung mirror can never stall an unguarded install.
+      - name: Install Chromium
+        timeout-minutes: 12
+        run: |
+          for i in 1 2 3; do
+            timeout 240 playwright install chromium && ok=1 && break
+            echo "chromium download attempt $i failed or timed out, retrying in 15s"; sleep 15
+          done
+          [ -n "$ok" ] || { echo "::error::chromium download failed 3 times"; exit 1; }
+      # ffmpeg (required, not preinstalled) + Roboto + Node.js (the MDI icons of the harness) + the browser's apt deps, each apt call time-boxed and retried
+      # so a flaky mirror is abandoned and retried instead of hanging; fail loudly if ffmpeg is still missing.
+      - name: Install ffmpeg, Roboto and browser deps
+        timeout-minutes: 12
+        run: |
+          for i in 1 2 3; do
+            timeout 150 apt-get update \
+              && DEBIAN_FRONTEND=noninteractive timeout 300 apt-get install -y --no-install-recommends ffmpeg fonts-roboto nodejs npm \
+              && timeout 300 playwright install-deps chromium \
+              && ok=1 && break
+            echo "apt attempt $i failed or timed out, retrying in 15s"; sleep 15
+          done
+          [ -n "$ok" ] || { echo "::error::apt failed 3 times"; exit 1; }
+          ffmpeg -version > /dev/null
+      # The icons the harness draws come from @mdi/js (no package.json here: not saved)
+      - name: MDI icons
+        timeout-minutes: 5
+        run: npm install --no-save --no-package-lock --no-audit --no-fund @mdi/js
+      - name: Render screenshots
+        run: |
+          set -o pipefail
+          python scripts/screenshots.py 2>&1 | tee /tmp/screenshots.log || {
+            echo "::error::screenshots failed: $(tail -c 1200 /tmp/screenshots.log | tr -d '\r' | tr '\n' ' ')"
+            exit 1
+          }
+      - name: Commit refreshed screenshots
+        if: steps.app-token.outputs.token != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+        run: |
+          if [ -z "$(git status --porcelain screenshots)" ]; then
+            echo "No screenshot changes."
+            exit 0
+          fi
+          BOT_ID="$(curl -fsS -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/users/${APP_SLUG}%5Bbot%5D" | grep -m1 -o '"id": *[0-9]*' | grep -o '[0-9]*$')"
+          git config user.name "${APP_SLUG}[bot]"
+          git config user.email "${BOT_ID}+${APP_SLUG}[bot]@users.noreply.github.com"
+          git add screenshots
+          git commit -m "chore: refresh screenshots"
+          git push
+      - name: Upload screenshots (manual run)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: screenshots
+          path: screenshots

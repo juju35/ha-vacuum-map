@@ -70,6 +70,12 @@ This builds on other Home Assistant integrations, so keep the `## Supported inte
   uses** (README marks them "both"); complex options (lists/objects) stay **YAML-only**,
   flagged in the README.
 
+## Screenshots — do not edit or commit them by hand
+The Screenshots workflow (`scripts/screenshots.py`, demo apartment of `scripts/demo_map.py`) regenerates them on the
+PR branch and commits them as the `juju35-screenshots[bot]` GitHub App, so the PR checks re-run on that commit by
+themselves. Comparison is exact. They are English, with light/dark twins, neutral/mock data, and never real family
+names. **One GIF per distinct animation/state/variant** (not one per repo).
+
 ## Conventions
 - Prefer YAML over UI configuration; keep configurations minimal; test iteratively.
 - Keep `ha-*` repos **independent**: no shared/factored code across repos — duplication is fine.

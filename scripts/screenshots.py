@@ -3,6 +3,9 @@ a gallery of the header with a few Roborock models, and the header animations as
 
 pip install -r requirements_test.txt playwright && playwright install chromium && npm install --no-save @mdi/js
 python scripts/screenshots.py
+
+Run by the Screenshots workflow, which commits the result on the pull request as the screenshots GitHub App: the
+clock is fixed and paused, every animation stepped by hand, so two runs give the same bytes (exact comparison).
 """
 
 from __future__ import annotations
@@ -73,8 +76,32 @@ INLINE = """() => {
     window.roots.push(host.shadowRoot);
   }
   window.roots = window.roots.filter((r) => r.host.isConnected);
-  return [...cards, ...window.roots].flatMap((r) => r.getAnimations());
+  // A transition still running (the theme applied after the first paint) is ended at once: only the looping
+  // animations are stepped, so that a still or a frame never catches one half-way.
+  const all = [...cards, ...window.roots].flatMap((r) => r.getAnimations());
+  for (const a of all) if (a instanceof CSSTransition) a.finish();
+  return all.filter((a) => !(a instanceof CSSTransition));
 }"""
+
+
+# A fixed, paused clock in every page (Date, timers, requestAnimationFrame): the robot's travel and the three.js view
+# only move when the script steps them, so every run renders the same pixels (the bot's comparison is exact).
+T0 = 1_763_632_800_000  # 2025-11-20 10:00 UTC
+
+
+async def _open(browser, url: str, settle_ms: int):
+    page = await browser.new_page(viewport={"width": 552, "height": 700}, device_scale_factor=2)
+    await page.clock.install(time=T0)
+    await page.clock.pause_at(T0 + 1000)
+    await page.goto(url)
+    await page.wait_for_load_state("networkidle")
+    await page.wait_for_timeout(500)  # scripts and the demo map load (real time: no timer runs meanwhile)
+    await page.clock.run_for(settle_ms)
+    # What the steps started in real time (three.js loaded, fonts, the map's room styles) lands, then a last step
+    await page.wait_for_timeout(800)
+    await page.clock.run_for(1000)
+    await page.wait_for_timeout(300)  # a WebGL frame drawn in the last step reaches the screen
+    return page
 
 
 async def _banner(page, card: int = 0):
@@ -83,10 +110,9 @@ async def _banner(page, card: int = 0):
     )
 
 
-async def _gif(page, port: int, theme: str, name: str, card: dict, fps: int = 15, seconds: float = 2.4) -> None:
+async def _gif(browser, port: int, theme: str, name: str, card: dict, fps: int = 15, seconds: float = 2.4) -> None:
     query = f"theme={theme}&cards={quote(json.dumps([card]))}"
-    await page.goto(f"http://localhost:{port}/index.html?{query}")
-    await page.wait_for_timeout(1500)
+    page = await _open(browser, f"http://localhost:{port}/index.html?{query}", 1500)
     box = await (await _banner(page)).as_element().bounding_box()
     clip = {"x": box["x"] - 4, "y": box["y"] - 4, "width": box["width"] + 8, "height": box["height"] + 8}
     with tempfile.TemporaryDirectory() as frames:
@@ -97,6 +123,7 @@ async def _gif(page, port: int, theme: str, name: str, card: dict, fps: int = 15
             )
             if not n:
                 raise RuntimeError(f"{name}: no animation to step")
+            await page.wait_for_timeout(80)  # the stepped picture (its drop-shadow layer) is painted again
             await page.screenshot(path=f"{frames}/f{i:03d}.png", clip=clip)
         # Halve the retina capture, one palette per clip, ordered dithering: small and deterministic
         subprocess.run(
@@ -106,6 +133,7 @@ async def _gif(page, port: int, theme: str, name: str, card: dict, fps: int = 15
              str(ROOT / "screenshots" / f"{name}{'-dark' if theme == 'dark' else ''}.gif")],
             check=True,
         )  # fmt: skip
+    await page.close()
 
 
 async def _shoot(port: int) -> None:
@@ -114,7 +142,6 @@ async def _shoot(port: int) -> None:
         browser = await p.chromium.launch(
             args=["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"]
         )
-        page = await browser.new_page(viewport={"width": 552, "height": 700}, device_scale_factor=2)
         shots = (
             ("light", "2d", "map.png"),
             ("dark", "2d", "map-dark.png"),
@@ -122,13 +149,17 @@ async def _shoot(port: int) -> None:
             ("dark", "3d", "map-3d-dark.png"),
         )
         for theme, view, name in shots:
-            await page.goto(f"http://localhost:{port}/index.html?theme={theme}&view={view}")
-            await page.wait_for_timeout(3000)  # the robot travels its last segment, three.js loads
+            # The robot travels its last segment, three.js loads
+            page = await _open(browser, f"http://localhost:{port}/index.html?theme={theme}&view={view}", 3000)
+            # Every animation paused at its start: the still is the same on every run (exact comparison)
+            await page.evaluate(f"() => {{ for (const a of ({INLINE})()) {{ a.pause(); a.currentTime = 0; }} }}")
+            await page.wait_for_timeout(300)
             await (await page.query_selector("#host")).screenshot(path=ROOT / "screenshots" / name)
+            await page.close()
         # The header of a few models, the map hidden
         for theme in ("light", "dark"):
-            await page.goto(f"http://localhost:{port}/index.html?theme={theme}&cards={quote(json.dumps(GALLERY))}")
-            await page.wait_for_timeout(1500)
+            url = f"http://localhost:{port}/index.html?theme={theme}&cards={quote(json.dumps(GALLERY))}"
+            page = await _open(browser, url, 1500)
             await page.evaluate(
                 "() => { for (const c of document.querySelectorAll('vacuum-map-card')) {"
                 " c.shadowRoot.querySelector('.body').style.display = 'none'; } }"
@@ -136,10 +167,11 @@ async def _shoot(port: int) -> None:
             name = f"header-models{'-dark' if theme == 'dark' else ''}.png"
             await page.evaluate(f"() => {{ for (const a of ({INLINE})()) {{ a.pause(); a.currentTime = 0; }} }}")
             await (await page.query_selector("#host")).screenshot(path=ROOT / "screenshots" / name)
+            await page.close()
         if os.environ.get("NO_GIF") != "1":
             for name, card in GIFS:
                 for theme in ("light", "dark"):
-                    await _gif(page, port, theme, name, card)
+                    await _gif(browser, port, theme, name, card)
         await browser.close()
 
 

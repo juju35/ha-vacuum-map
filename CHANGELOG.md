@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.2 - 2026-11-20
+
+### Fixes
+- The room colours of `rooms` and the `max_height` option are escaped where the card writes them into its markup: a value with a quote no longer breaks the map or its labels.
+
 ## 1.6.1 - 2026-11-18
 
 ### Fixes

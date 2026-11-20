@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.6.2 - 2026-11-20
+
+### Fixes
+- The room colours of `rooms` and the `max_height` option are escaped where the card writes them into its markup: a value with a quote no longer breaks the map or its labels.
+
+### Performance
+- The header and the active room are only worked out again when the vacuum's state, the theme, the registries or the language change, not on every state change of the instance.
+
+### Maintenance
+- Screenshots workflow: the screenshots are rendered in CI (Debian 12 container) and committed on the pull request by the screenshots GitHub App; the script fixes and pauses the clock and steps every animation, so two runs give the same bytes.
+- README: the Roborock logo under the repository's own.
+
 ## 1.6.1 - 2026-11-18
 
 ### Fixes

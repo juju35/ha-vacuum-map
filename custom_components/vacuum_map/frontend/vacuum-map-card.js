@@ -1,7 +1,7 @@
 // Vacuum Map card: a clean, live map of a Roborock vacuum, drawn from the vectors the vacuum_map integration sends.
 // Vanilla JS, no dependency. Served by the integration at /vacuum_map/vacuum-map-card.js.
 
-const VACUUM_MAP_CARD_VERSION = '1.6.1';
+const VACUUM_MAP_CARD_VERSION = '1.6.2';
 
 const VM_STRINGS = {
   en: { loading: 'Loading the map…', no_map: 'No map for this vacuum yet', not_set_up: 'Set up the Vacuum Map integration first', no_entity: 'Choose a vacuum', e_entity: 'Vacuum', e_title: 'Title', e_rotation: 'Rotation', e_labels: 'Room names', e_path: 'Path', e_zones: 'No-go zones', e_obstacles: 'Obstacles', fullscreen: 'Full screen', close: 'Close', e_view: 'View', e_view_toggle: '2D / 3D button', e_fullscreen: 'Full screen button', e_illustration: 'Animated illustration', e_illustration_theme: 'Illustration theme', theme_auto: 'Automatic (follows the theme)', theme_day: 'Day', theme_night: 'Night', e_model: 'Robot model', model_auto: 'Automatic (from the device)' },
@@ -1164,6 +1164,7 @@ class VacuumMapCard extends HTMLElement {
   setConfig(config) {
     if (!config) throw new Error('Invalid configuration');
     const previous = this._config;
+    this._hassDeps = null;
     this._config = {
       rotation: 0,
       show_labels: true,
@@ -1197,10 +1198,15 @@ class VacuumMapCard extends HTMLElement {
   set hass(hass) {
     const first = !this._hass;
     this._hass = hass;
-    this._renderHead();
+    // Home Assistant sets hass on every state change of the instance: the header and the active room are only worked
+    // out again when what they read changed (the vacuum's state, the theme, the registries, the language).
+    const deps = [hass.states?.[this._config?.entity], hass.themes?.darkMode, hass.devices, hass.entities, hass.formatEntityState, hass.language, hass.locale];
+    const changed = !this._hassDeps || deps.some((d, i) => d !== this._hassDeps[i]);
+    this._hassDeps = deps;
+    if (changed) this._renderHead();
     if (this._fullMap) this._fullMap.hass = hass;
     if (first || !this._unsub) this._subscribe();
-    this._updateActiveRoom();
+    if (changed) this._updateActiveRoom();
   }
 
   getCardSize() {
@@ -1610,12 +1616,12 @@ class VacuumMapCard extends HTMLElement {
       .map((room, i) => {
         const style = this._roomStyle(room, i);
         const d = room.rings.map((ring) => this._ringPath(ring)).join('');
-        return `<path class="room" data-room="${room.id}" d="${d}" fill="${style.color}" fill-opacity="0.38" fill-rule="evenodd"></path>`;
+        return `<path class="room" data-room="${room.id}" d="${d}" fill="${vmEscape(style.color)}" fill-opacity="0.38" fill-rule="evenodd"></path>`;
       })
       .join('');
     const floor = g.floor.map((ring) => this._ringPath(ring)).join('');
     const walls = g.walls.map((ring) => this._ringPath(ring)).join('');
-    body.innerHTML = `<div class="map" style="aspect-ratio:${vw.toFixed(1)} / ${vh.toFixed(1)};width:min(100%, calc(${this._config.max_height || '70vh'} * ${(vw / vh).toFixed(4)}))">
+    body.innerHTML = `<div class="map" style="aspect-ratio:${vw.toFixed(1)} / ${vh.toFixed(1)};width:min(100%, calc(${vmEscape(this._config.max_height || '70vh')} * ${(vw / vh).toFixed(4)}))">
       <svg viewBox="${vx.toFixed(1)} ${vy.toFixed(1)} ${vw.toFixed(1)} ${vh.toFixed(1)}" preserveAspectRatio="xMidYMid meet">
         <path d="${floor}" fill="var(--secondary-text-color)" fill-opacity="0.16" fill-rule="evenodd"></path>
         <g class="rooms">${roomPaths}</g>
@@ -1703,7 +1709,7 @@ class VacuumMapCard extends HTMLElement {
     this._geometry.rooms.forEach((room, i) => {
       const style = this._roomStyle(room, i);
       if (style.hidden) return;
-      html += `<div class="label" data-room="${room.id}" style="${at(room)}"><span class="ic" style="background:${style.color}"><ha-icon icon="${vmEscape(style.icon)}"></ha-icon></span><span class="name">${vmEscape(style.name)}</span></div>`;
+      html += `<div class="label" data-room="${room.id}" style="${at(room)}"><span class="ic" style="background:${vmEscape(style.color)}"><ha-icon icon="${vmEscape(style.icon)}"></ha-icon></span><span class="name">${vmEscape(style.name)}</span></div>`;
     });
     return html;
   }

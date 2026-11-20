@@ -1,13 +1,18 @@
 # ha-vacuum-map
 
 [![Marketplace](https://img.shields.io/badge/Marketplace-Custom-41BDF5.svg)](https://www.home-assistant.io/integrations/marketplace/)
-[![HACS Validation](https://github.com/juju35/ha-vacuum-map/actions/workflows/hacs.yml/badge.svg)](https://github.com/juju35/ha-vacuum-map/actions/workflows/hacs.yml)
+[![Marketplace Validation](https://github.com/juju35/ha-vacuum-map/actions/workflows/hacs.yml/badge.svg)](https://github.com/juju35/ha-vacuum-map/actions/workflows/hacs.yml)
 [![Validate](https://github.com/juju35/ha-vacuum-map/actions/workflows/validate.yml/badge.svg)](https://github.com/juju35/ha-vacuum-map/actions/workflows/validate.yml)
+[![Lint](https://github.com/juju35/ha-vacuum-map/actions/workflows/lint.yml/badge.svg)](https://github.com/juju35/ha-vacuum-map/actions/workflows/lint.yml)
 [![Release](https://img.shields.io/github/v/release/juju35/ha-vacuum-map)](https://github.com/juju35/ha-vacuum-map/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/juju35/ha-vacuum-map/blob/main/LICENSE)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/julienstep9)
 
 <p align="center"><img src="https://raw.githubusercontent.com/juju35/ha-vacuum-map/main/custom_components/vacuum_map/brand/icon.png" alt="Vacuum Map" width="120"></p>
+
+<p align="center">
+  <a href="https://www.roborock.com/"><img src="https://raw.githubusercontent.com/juju35/ha-vacuum-map/main/images/roborock.png" alt="Roborock" width="64"></a>
+</p>
 
 Home Assistant integration and Lovelace card that draw a **clean, live map of your Roborock vacuum**: rooms with their name and an icon, walls and doors, the dock, no-go zones, and the robot travelling its path in real time — instead of the pixelated map image.
 
@@ -194,3 +199,9 @@ Contributions for additional languages are welcome!
 ## License
 
 [MIT](https://github.com/juju35/ha-vacuum-map/blob/main/LICENSE)
+
+## Support
+
+If you find this project useful, you can support its development:
+
+<a href="https://buymeacoffee.com/julienstep9"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" height="50"></a>

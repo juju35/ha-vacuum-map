@@ -25,7 +25,7 @@ test('elements and card picker entry are defined once', () => {
 test('room icons from names, in several languages', () => {
   const cases = {
     'Chambre Parents': 'mdi:bed',
-    'Chambre Léa': 'mdi:bed',
+    "Chambre d'amis": 'mdi:bed',
     'Salle à manger': 'mdi:silverware-fork-knife',
     'Salle de bains': 'mdi:shower',
     Cuisine: 'mdi:stove',
@@ -138,4 +138,24 @@ test('room colours from the configuration are escaped in the labels', () => {
   const html = card._labelsHtml();
   assert.doesNotMatch(html, /<img/);
   assert.match(html, /background:red&quot;&gt;&lt;img/);
+});
+
+test('hass of another entity: the header is not worked out again', () => {
+  const card = Object.create(defined['vacuum-map-card'].prototype);
+  card._config = { entity: 'vacuum.s' };
+  card._unsub = () => {};
+  let heads = 0;
+  let rooms = 0;
+  card._renderHead = () => heads++;
+  card._updateActiveRoom = () => rooms++;
+  const vac = { state: 'cleaning', attributes: {} };
+  const base = { states: { 'vacuum.s': vac, 'light.a': { state: 'on' } }, themes: { darkMode: false }, devices: {}, entities: {} };
+  card.hass = base;
+  card.hass = { ...base, states: { ...base.states, 'light.a': { state: 'off' } } };
+  assert.equal(heads, 1);
+  assert.equal(rooms, 1);
+  card.hass = { ...base, states: { ...base.states, 'vacuum.s': { state: 'returning', attributes: {} } } };
+  card.hass = { ...base, states: { ...base.states, 'vacuum.s': { state: 'returning', attributes: {} } }, themes: { darkMode: true } };
+  assert.equal(heads, 3);
+  assert.equal(rooms, 3);
 });

@@ -1164,6 +1164,7 @@ class VacuumMapCard extends HTMLElement {
   setConfig(config) {
     if (!config) throw new Error('Invalid configuration');
     const previous = this._config;
+    this._hassDeps = null;
     this._config = {
       rotation: 0,
       show_labels: true,
@@ -1197,10 +1198,15 @@ class VacuumMapCard extends HTMLElement {
   set hass(hass) {
     const first = !this._hass;
     this._hass = hass;
-    this._renderHead();
+    // Home Assistant sets hass on every state change of the instance: the header and the active room are only worked
+    // out again when what they read changed (the vacuum's state, the theme, the registries, the language).
+    const deps = [hass.states?.[this._config?.entity], hass.themes?.darkMode, hass.devices, hass.entities, hass.formatEntityState, hass.language, hass.locale];
+    const changed = !this._hassDeps || deps.some((d, i) => d !== this._hassDeps[i]);
+    this._hassDeps = deps;
+    if (changed) this._renderHead();
     if (this._fullMap) this._fullMap.hass = hass;
     if (first || !this._unsub) this._subscribe();
-    this._updateActiveRoom();
+    if (changed) this._updateActiveRoom();
   }
 
   getCardSize() {

@@ -10,6 +10,10 @@
 
 <p align="center"><img src="https://raw.githubusercontent.com/juju35/ha-vacuum-map/main/custom_components/vacuum_map/brand/icon.png" alt="Vacuum Map" width="120"></p>
 
+<p align="center">
+  <a href="https://www.roborock.com/"><img src="https://raw.githubusercontent.com/juju35/ha-vacuum-map/main/images/roborock.png" alt="Roborock" width="64"></a>
+</p>
+
 Home Assistant integration and Lovelace card that draw a **clean, live map of your Roborock vacuum**: rooms with their name and an icon, walls and doors, the dock, no-go zones, and the robot travelling its path in real time — instead of the pixelated map image.
 
 [![Open your Home Assistant instance and open a repository inside the Marketplace.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=juju35&repository=ha-vacuum-map&category=integration)

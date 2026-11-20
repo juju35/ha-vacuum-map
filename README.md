@@ -1,8 +1,9 @@
 # ha-vacuum-map
 
 [![Marketplace](https://img.shields.io/badge/Marketplace-Custom-41BDF5.svg)](https://www.home-assistant.io/integrations/marketplace/)
-[![HACS Validation](https://github.com/juju35/ha-vacuum-map/actions/workflows/hacs.yml/badge.svg)](https://github.com/juju35/ha-vacuum-map/actions/workflows/hacs.yml)
+[![Marketplace Validation](https://github.com/juju35/ha-vacuum-map/actions/workflows/hacs.yml/badge.svg)](https://github.com/juju35/ha-vacuum-map/actions/workflows/hacs.yml)
 [![Validate](https://github.com/juju35/ha-vacuum-map/actions/workflows/validate.yml/badge.svg)](https://github.com/juju35/ha-vacuum-map/actions/workflows/validate.yml)
+[![Lint](https://github.com/juju35/ha-vacuum-map/actions/workflows/lint.yml/badge.svg)](https://github.com/juju35/ha-vacuum-map/actions/workflows/lint.yml)
 [![Release](https://img.shields.io/github/v/release/juju35/ha-vacuum-map)](https://github.com/juju35/ha-vacuum-map/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/juju35/ha-vacuum-map/blob/main/LICENSE)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/julienstep9)
@@ -194,3 +195,9 @@ Contributions for additional languages are welcome!
 ## License
 
 [MIT](https://github.com/juju35/ha-vacuum-map/blob/main/LICENSE)
+
+## Support
+
+If you find this project useful, you can support its development:
+
+<a href="https://buymeacoffee.com/julienstep9"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" height="50"></a>

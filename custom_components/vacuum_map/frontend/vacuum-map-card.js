@@ -1610,12 +1610,12 @@ class VacuumMapCard extends HTMLElement {
       .map((room, i) => {
         const style = this._roomStyle(room, i);
         const d = room.rings.map((ring) => this._ringPath(ring)).join('');
-        return `<path class="room" data-room="${room.id}" d="${d}" fill="${style.color}" fill-opacity="0.38" fill-rule="evenodd"></path>`;
+        return `<path class="room" data-room="${room.id}" d="${d}" fill="${vmEscape(style.color)}" fill-opacity="0.38" fill-rule="evenodd"></path>`;
       })
       .join('');
     const floor = g.floor.map((ring) => this._ringPath(ring)).join('');
     const walls = g.walls.map((ring) => this._ringPath(ring)).join('');
-    body.innerHTML = `<div class="map" style="aspect-ratio:${vw.toFixed(1)} / ${vh.toFixed(1)};width:min(100%, calc(${this._config.max_height || '70vh'} * ${(vw / vh).toFixed(4)}))">
+    body.innerHTML = `<div class="map" style="aspect-ratio:${vw.toFixed(1)} / ${vh.toFixed(1)};width:min(100%, calc(${vmEscape(this._config.max_height || '70vh')} * ${(vw / vh).toFixed(4)}))">
       <svg viewBox="${vx.toFixed(1)} ${vy.toFixed(1)} ${vw.toFixed(1)} ${vh.toFixed(1)}" preserveAspectRatio="xMidYMid meet">
         <path d="${floor}" fill="var(--secondary-text-color)" fill-opacity="0.16" fill-rule="evenodd"></path>
         <g class="rooms">${roomPaths}</g>
@@ -1703,7 +1703,7 @@ class VacuumMapCard extends HTMLElement {
     this._geometry.rooms.forEach((room, i) => {
       const style = this._roomStyle(room, i);
       if (style.hidden) return;
-      html += `<div class="label" data-room="${room.id}" style="${at(room)}"><span class="ic" style="background:${style.color}"><ha-icon icon="${vmEscape(style.icon)}"></ha-icon></span><span class="name">${vmEscape(style.name)}</span></div>`;
+      html += `<div class="label" data-room="${room.id}" style="${at(room)}"><span class="ic" style="background:${vmEscape(style.color)}"><ha-icon icon="${vmEscape(style.icon)}"></ha-icon></span><span class="name">${vmEscape(style.name)}</span></div>`;
     });
     return html;
   }

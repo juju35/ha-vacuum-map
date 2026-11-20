@@ -130,3 +130,12 @@ test('status pill: after the whole title, else under the subtitle, else its dot;
   // the status is in the pill, not repeated in the subtitle
   assert.doesNotMatch(source, /\[status, this\._geometry/);
 });
+
+test('room colours from the configuration are escaped in the labels', () => {
+  const card = Object.create(defined['vacuum-map-card'].prototype);
+  card._config = { show_labels: true, rooms: { 1: { name: 'Hall', color: 'red"><img src=x onerror=alert(1)>' } } };
+  card._geometry = { rooms: [{ id: 1, name: 'Hall' }] };
+  const html = card._labelsHtml();
+  assert.doesNotMatch(html, /<img/);
+  assert.match(html, /background:red&quot;&gt;&lt;img/);
+});

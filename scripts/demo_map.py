@@ -6,17 +6,31 @@ No family name, no real floor plan: a made-up apartment.
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import random
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tests"))
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tests"))
 
 from maps import WALL, raw_map, room  # noqa: E402
 
-from custom_components.vacuum_map.geometry import geometry_payload, parse_grid, vectorize  # noqa: E402
+
+def _geometry():
+    """geometry.py alone (pure Python), not through the package: the screenshots run without Home Assistant."""
+    spec = importlib.util.spec_from_file_location(
+        "vacuum_map_geometry", ROOT / "custom_components" / "vacuum_map" / "geometry.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module  # dataclasses look their module up
+    spec.loader.exec_module(module)
+    return module
+
+
+_geo = _geometry()
+geometry_payload, parse_grid, vectorize = _geo.geometry_payload, _geo.parse_grid, _geo.vectorize
 
 W, H = 300, 190
 ROOMS = {

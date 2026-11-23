@@ -47,7 +47,7 @@ The header follows the model of the vacuum, or the one chosen with the `model` o
 
 | Integration | Vacuums |
 |---|---|
-| [Roborock](https://www.home-assistant.io/integrations/roborock/) (official) | Roborock vacuums with a map in the Roborock app (S, Q, Qrevo, Saros series…) |
+| <img src="https://raw.githubusercontent.com/juju35/ha-vacuum-map/main/images/roborock.png" alt="" width="16"> [Roborock](https://www.home-assistant.io/integrations/roborock/) (official) | Roborock vacuums with a map in the Roborock app (S, Q, Qrevo, Saros series…) |
 
 ## Features
 

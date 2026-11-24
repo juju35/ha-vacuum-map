@@ -45,13 +45,28 @@ jobs:
         run: |
           VERSION="$(jq -r .version custom_components/vacuum_map/manifest.json)"
           grep -q "VERSION = \"$VERSION\"" custom_components/vacuum_map/const.py
-          grep -q "VACUUM_MAP_CARD_VERSION = '$VERSION'" custom_components/vacuum_map/frontend/vacuum-map-card.js
+          grep -q "VACUUM_MAP_CARD_VERSION = '$VERSION'" src/vacuum-map-card/header.js
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           if git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Set up Node
+        if: steps.version.outputs.exists == 'false'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+
+      # The card is assembled from its ES modules (src/vacuum-map-card/, scripts/build-frontend.mjs) into
+      # frontend/vacuum-map-card.js, which the zip carries next to the vendored three.min.js.
+      - name: Build the card
+        if: steps.version.outputs.exists == 'false'
+        run: |
+          npm install --no-save --no-package-lock acorn@8.19.0
+          node scripts/build-frontend.mjs
+          test -s custom_components/vacuum_map/frontend/vacuum-map-card.js
 
       - name: Build zip and notes
         if: steps.version.outputs.exists == 'false'

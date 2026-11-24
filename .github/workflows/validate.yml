@@ -35,7 +35,9 @@ jobs:
         run: |
           VERSION="$(jq -r .version custom_components/vacuum_map/manifest.json)"
           grep -q "VERSION = \"$VERSION\"" custom_components/vacuum_map/const.py || { echo "::error file=custom_components/vacuum_map/const.py::version $VERSION not found in custom_components/vacuum_map/const.py"; exit 1; }
-          grep -q "VACUUM_MAP_CARD_VERSION = '$VERSION'" custom_components/vacuum_map/frontend/vacuum-map-card.js || { echo "::error file=custom_components/vacuum_map/frontend/vacuum-map-card.js::version $VERSION not found in custom_components/vacuum_map/frontend/vacuum-map-card.js"; exit 1; }
+          # The card is written as ES modules (src/vacuum-map-card/), assembled at build.
+          CARD=src/vacuum-map-card/header.js
+          grep -q "VACUUM_MAP_CARD_VERSION = '$VERSION'" "$CARD" || { echo "::error file=$CARD::version $VERSION not found in $CARD"; exit 1; }
           grep -q "^## $VERSION " CHANGELOG.md || { echo "::error file=CHANGELOG.md::no '## $VERSION' entry in CHANGELOG.md"; exit 1; }
           echo "Version $VERSION everywhere"
 
@@ -112,5 +114,8 @@ jobs:
         with:
           node-version: "22"
 
+      # The tests evaluate the card assembled from src/ (scripts/bundle.mjs needs acorn).
       - name: Run card tests
-        run: node --test test/*.test.mjs
+        run: |
+          npm install --no-save --no-package-lock acorn@8.19.0
+          node --test test/*.test.mjs

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.3 - 2026-11-24
+
+### Maintenance
+- The card source is split into ES modules: `src/vacuum-map-card/` (entry `index.js`), cut at its sections (helpers, robot pictures, models, header, three.js loader, 3D scene, styles, card, editor), with the translations in one file per language (`i18n/<lang>.js`). `scripts/build-frontend.mjs` assembles them, in their original order, into the same `frontend/vacuum-map-card.js` as before, which is no longer committed; the release zip is unchanged (the vendored `three.min.js` stays as it is) and the tests run on the assembled card.
+
 ## 1.6.2 - 2026-11-20
 
 ### Fixes

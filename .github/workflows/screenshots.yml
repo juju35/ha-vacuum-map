@@ -86,18 +86,14 @@ jobs:
           done
           [ -n "$ok" ] || { echo "::error::apt failed 3 times"; exit 1; }
           ffmpeg -version > /dev/null
-      # The icons the harness draws come from @mdi/js (no package.json here: not saved)
-      - name: MDI icons
+      # The icons the harness draws come from @mdi/js, and acorn assembles the card (no package.json here: not saved;
+      # installed together, as a later --no-save install would prune the first one).
+      - name: MDI icons and acorn
         timeout-minutes: 5
-        run: npm install --no-save --no-package-lock --no-audit --no-fund @mdi/js
+        run: npm install --no-save --no-package-lock --no-audit --no-fund @mdi/js acorn@8.19.0
       # The card is assembled from its ES modules (src/vacuum-map-card/), not committed.
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: "22"
       - name: Build the card
-        run: |
-          npm install --no-save --no-package-lock acorn@8.19.0
-          node scripts/build-frontend.mjs
+        run: node scripts/build-frontend.mjs
       - name: Render screenshots
         run: |
           set -o pipefail

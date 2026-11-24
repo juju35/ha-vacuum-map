@@ -5,3 +5,5 @@ __pycache__/
 .venv/
 report/
 node_modules/
+# Assembled from src/<stem>/ by scripts/build-frontend.mjs
+custom_components/vacuum_map/frontend/vacuum-map-card.js

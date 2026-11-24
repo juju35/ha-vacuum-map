@@ -19,6 +19,7 @@
 ## Before opening a PR — run the checks locally
 CI mirrors these; running them first avoids round-trips:
 ```sh
+npm install --no-save --no-package-lock acorn@8.19.0 && node scripts/build-frontend.mjs
 pre-commit run -a
 vulture custom_components .vulture_whitelist.py --min-confidence 60
 npx --yes jscpd@5.4.2 .
@@ -39,9 +40,17 @@ carries the new version, updated together in one commit:
 1. `CHANGELOG.md` → add a "## X.Y.Z - YYYY-MM-DD" section at the top (`### Features` | `Fixes` | `Performance` | `Maintenance`).
 2. `custom_components/vacuum_map/manifest.json` → `"version": "X.Y.Z"`.
 3. `custom_components/vacuum_map/const.py` → `VERSION = "X.Y.Z"`.
-4. `custom_components/vacuum_map/frontend/vacuum-map-card.js` → `VACUUM_MAP_CARD_VERSION = 'X.Y.Z'`.
+4. `src/vacuum-map-card/header.js` → `VACUUM_MAP_CARD_VERSION = 'X.Y.Z'`.
 - Bump rule: `fix` → patch, `feat` → minor, breaking change → major.
 - The PR/commit title carries the version in parentheses, e.g. `feat: new option (X.Y.Z)`.
+
+## Source layout
+- The card is ES modules in `src/vacuum-map-card/` (entry `index.js`), assembled at build by
+  `scripts/build-frontend.mjs` (`scripts/bundle.mjs`) into `custom_components/vacuum_map/frontend/vacuum-map-card.js`,
+  which is **not committed** (build before the screenshots or a local install; the node tests bundle it themselves).
+- Modules share one scope once assembled: keep top-level names unique across modules; a new module must be listed in `index.js`.
+- Translations: one file per language in `src/vacuum-map-card/i18n/<lang>.js`, rebuilt into a single table literal at build.
+- `frontend/vendor/three.min.js` is vendored (scripts/build-three.mjs): committed as is, never split.
 
 ## README layout
 - Header order: H1, then the badge row, then the repo's **own logo** centered under the badges —

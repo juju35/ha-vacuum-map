@@ -1,10 +1,11 @@
 // Pure functions of the card, run without a browser: node --test test/*.test.mjs
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { bundle } from '../scripts/bundle.mjs';
 import { test } from 'node:test';
 import vm from 'node:vm';
 
-const source = readFileSync(new URL('../custom_components/vacuum_map/frontend/vacuum-map-card.js', import.meta.url), 'utf8');
+// The card assembled from its ES modules (src/vacuum-map-card/), as scripts/build-frontend.mjs does.
+const source = bundle('src/vacuum-map-card/index.js');
 const defined = {};
 const context = {
   HTMLElement: class {},

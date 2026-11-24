@@ -152,16 +152,18 @@ To report a rendering issue, attach the diagnostics of the integration (**Settin
 ## Development
 
 ```bash
+npm install --no-save --no-package-lock acorn@8.19.0
+node scripts/build-frontend.mjs                      # assembles the card from src/ into frontend/ (screenshots, local install)
 pip install -r requirements_test.txt && pytest       # integration tests
 node --test test/*.test.mjs                          # card tests
 python scripts/screenshots.py                        # screenshots/ (stills and header GIFs, needs ffmpeg) from a made-up apartment (scripts/demo_map.py)
 ```
 
-The card is plain JavaScript (`custom_components/vacuum_map/frontend/vacuum-map-card.js`), served by the integration: no build step. The 3D view uses a subset of three.js, `frontend/vendor/three.min.js`, rebuilt with `npm install --no-save three esbuild && node scripts/build-three.mjs`.
+The card is plain JavaScript written as ES modules in `src/vacuum-map-card/` (entry `index.js`, translations one file per language in `i18n/`); `scripts/build-frontend.mjs` assembles them into the single classic script served by the integration, `frontend/vacuum-map-card.js`, which is not committed (the release zip carries it). The 3D view uses a subset of three.js, `frontend/vendor/three.min.js`, rebuilt with `npm install --no-save three esbuild && node scripts/build-three.mjs`.
 
 ### Releasing
 
-1. Bump the version in `custom_components/vacuum_map/manifest.json`, `VERSION` in `const.py` and `VACUUM_MAP_CARD_VERSION` in `frontend/vacuum-map-card.js`
+1. Bump the version in `custom_components/vacuum_map/manifest.json`, `VERSION` in `const.py` and `VACUUM_MAP_CARD_VERSION` in `src/vacuum-map-card/header.js`
 2. Add a `## <version>` section at the top of [CHANGELOG.md](https://github.com/juju35/ha-vacuum-map/blob/main/CHANGELOG.md)
 3. Push to `main`: the **Release** workflow creates the tag and the GitHub release with `vacuum_map.zip` and the changelog section as notes
 

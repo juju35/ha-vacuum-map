@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - "custom_components/vacuum_map/frontend/**"
+      - "src/**"
       - "custom_components/vacuum_map/geometry.py"
       - "scripts/**"
       - "tests/maps.py"
@@ -89,6 +90,14 @@ jobs:
       - name: MDI icons
         timeout-minutes: 5
         run: npm install --no-save --no-package-lock --no-audit --no-fund @mdi/js
+      # The card is assembled from its ES modules (src/vacuum-map-card/), not committed.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+      - name: Build the card
+        run: |
+          npm install --no-save --no-package-lock acorn@8.19.0
+          node scripts/build-frontend.mjs
       - name: Render screenshots
         run: |
           set -o pipefail

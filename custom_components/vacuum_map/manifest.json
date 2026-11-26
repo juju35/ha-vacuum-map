@@ -2,6 +2,7 @@
   "domain": "vacuum_map",
   "name": "Vacuum Map",
   "after_dependencies": ["roborock"],
+  "categories": ["appliances_cleaning.cleaning"],
   "codeowners": ["@juju35"],
   "config_flow": true,
   "dependencies": ["frontend", "http", "lovelace", "websocket_api"],

@@ -27,6 +27,7 @@ export class VacuumMapCard extends HTMLElement {
       show_obstacles: false,
       view: '2d',
       show_view_toggle: true,
+      show_camera_buttons: true,
       show_fullscreen: true,
       ...config,
     };
@@ -495,6 +496,7 @@ export class VacuumMapCard extends HTMLElement {
       <div class="labels"></div>
       <div class="three"></div><div class="labels3d"></div>
       ${this._config.show_view_toggle ? `<div class="vt" role="group"><button data-view="2d">2D</button><button data-view="3d">3D</button></div>` : ''}
+      ${this._config.show_camera_buttons ? `<div class="cam" role="group"><button class="icon-btn" data-cam="save" title="${vmT(this._hass, 'view_save')}" aria-label="${vmT(this._hass, 'view_save')}"><ha-icon icon="mdi:content-save-outline"></ha-icon></button><button class="icon-btn" data-cam="reset" title="${vmT(this._hass, 'view_reset')}" aria-label="${vmT(this._hass, 'view_reset')}"><ha-icon icon="mdi:camera-retake-outline"></ha-icon></button></div>` : ''}
       ${(this._embedded || this._illustrated()) && this._config.show_fullscreen ? `<button class="icon-btn fs" data-action="fullscreen" title="${vmT(this._hass, 'fullscreen')}" aria-label="${vmT(this._hass, 'fullscreen')}"><ha-icon icon="mdi:fullscreen"></ha-icon></button>` : ''}
     </div>`;
     this.style.setProperty('--vm-accent', 'var(--info-color, #4f8ef7)');
@@ -508,10 +510,60 @@ export class VacuumMapCard extends HTMLElement {
         this._setView(button.dataset.view === '3d');
       });
     }
+    for (const button of body.querySelectorAll('.cam button')) {
+      button.addEventListener('click', (ev) => {
+        ev.stopPropagation(); // not a click on the map for a card that shows this one
+        if (button.dataset.cam === 'save') this._saveView3d(button);
+        else this._resetView3d();
+      });
+    }
     this._drawLabels();
     this._active = undefined; // new elements: apply the active room again
     this._setView(this._is3d, true);
     if (this._live) this._applyLive(this._live, true);
+  }
+
+  // The 3D camera: the view saved on this device (browser storage, per vacuum and map) wins over camera_3d, which
+  // wins over the start view. Saving keeps the current view for the next loads; resetting forgets it.
+  _viewKey() {
+    return `vacuum-map-card.view3d.${this._config.entity}.${this._config.map ?? ''}`;
+  }
+
+  _defaultView3d() {
+    try {
+      const saved = JSON.parse(window.localStorage?.getItem(this._viewKey()) || 'null');
+      if (saved && typeof saved === 'object') return saved;
+    } catch {
+      // no storage here (private mode, a webview without it): camera_3d or the start view
+    }
+    return this._config.camera_3d && typeof this._config.camera_3d === 'object' ? this._config.camera_3d : null;
+  }
+
+  _saveView3d(button) {
+    if (!this._scene) return;
+    try {
+      window.localStorage.setItem(this._viewKey(), JSON.stringify(this._scene.view()));
+    } catch {
+      return;
+    }
+    const icon = button?.querySelector('ha-icon');
+    if (!icon) return;
+    icon.setAttribute('icon', 'mdi:check');
+    button.title = vmT(this._hass, 'view_saved');
+    clearTimeout(this._savedTimer);
+    this._savedTimer = setTimeout(() => {
+      icon.setAttribute('icon', 'mdi:content-save-outline');
+      button.title = vmT(this._hass, 'view_save');
+    }, 1500);
+  }
+
+  _resetView3d() {
+    try {
+      window.localStorage?.removeItem(this._viewKey());
+    } catch {
+      // nothing saved to forget
+    }
+    this._scene?.home();
   }
 
   // 2D or 3D: three.js is loaded and the scene built the first time the 3D view is shown

@@ -1,6 +1,28 @@
 // The 3D view: floors, walls, zones, path and robot, drawn by three.js; rendered only when something changes
 import { VM_FLOOR_HEIGHT, VM_WALL_HEIGHT, vmPolygons, vmRingArea } from "./three.js";
 
+// The start view: turned a little from straight south, 47° from above, the whole map in sight.
+const VM_HOME_THETA = Math.PI / 2 - 0.45;
+const VM_HOME_PHI = 0.82;
+const VM_DEG = Math.PI / 180;
+const vmClamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
+const vmNum = (v) => (v === '' || v == null || !Number.isFinite(Number(v)) ? null : Number(v));
+
+// A camera view as the card stores it (camera_3d, the view saved on the device): rotation from the start view and
+// tilt from straight above in degrees, zoom, and the point looked at moved by pan_x / pan_y, in map widths.
+// Anything missing or out of range falls back to the start view or the nearest allowed value.
+export const vmCameraView = (v) => {
+  const rotation = vmNum(v?.rotation) ?? 0;
+  const tilt = vmNum(v?.tilt);
+  return {
+    rotation: Math.round((((rotation % 360) + 540) % 360) - 180),
+    tilt: Math.round(vmClamp(tilt ?? VM_HOME_PHI / VM_DEG, 7, 77)),
+    zoom: Math.round(vmClamp(vmNum(v?.zoom) ?? 1, 0.5, 4) * 100) / 100,
+    pan_x: Math.round(vmClamp(vmNum(v?.pan_x) ?? 0, -0.6, 0.6) * 1000) / 1000,
+    pan_y: Math.round(vmClamp(vmNum(v?.pan_y) ?? 0, -0.6, 0.6) * 1000) / 1000,
+  };
+};
+
 export class VmScene {
   constructor(T, card) {
     this.T = T;
@@ -53,11 +75,43 @@ export class VmScene {
     this.request();
   }
 
+  // Back to the card's default view: the one saved on this device, else camera_3d, else the start view.
   home() {
-    this.theta = Math.PI / 2 - 0.45;
-    this.phi = 0.82;
-    this.zoom = 1;
+    this.setView(this.card?._defaultView3d?.());
+  }
+
+  setView(view) {
+    const v = vmCameraView(view);
+    this.theta = VM_HOME_THETA + v.rotation * VM_DEG;
+    this.phi = v.tilt * VM_DEG;
+    this.zoom = v.zoom;
+    this.panX = v.pan_x;
+    this.panY = v.pan_y;
     this.request();
+  }
+
+  // The current view, in the units of camera_3d.
+  view() {
+    return vmCameraView({
+      rotation: (this.theta - VM_HOME_THETA) / VM_DEG,
+      tilt: this.phi / VM_DEG,
+      zoom: this.zoom,
+      pan_x: this.panX,
+      pan_y: this.panY,
+    });
+  }
+
+  // Moves the point looked at by a drag of (dx, dy) pixels: the map follows the finger.
+  _pan(dx, dy) {
+    const h = this.box?.clientHeight;
+    if (!h || !this.span) return;
+    const k = (1.55 / this.zoom) * (0.9 / h); // map widths per pixel, about, at the point looked at
+    const s = Math.sin(this.theta);
+    const c = Math.cos(this.theta);
+    // screen right on the ground: (s, -c); away from the camera: (-c, -s). Dragging right moves the point looked at
+    // to the left, dragging down moves it away from the camera.
+    this.panX = vmClamp(this.panX - (s * dx + c * dy) * k, -0.6, 0.6);
+    this.panY = vmClamp(this.panY - (s * dy - c * dx) * k, -0.6, 0.6);
   }
 
   // Map pixels (after the card's rotation) → scene: x right, z down the plan, y up
@@ -305,12 +359,14 @@ export class VmScene {
   render() {
     if (!this.span || !this.box?.isConnected) return;
     const distance = (this.span * 1.55) / this.zoom;
+    const tx = (this.panX || 0) * this.span;
+    const tz = (this.panY || 0) * this.span;
     this.camera.position.set(
-      distance * Math.sin(this.phi) * Math.cos(this.theta),
+      tx + distance * Math.sin(this.phi) * Math.cos(this.theta),
       distance * Math.cos(this.phi),
-      distance * Math.sin(this.phi) * Math.sin(this.theta),
+      tz + distance * Math.sin(this.phi) * Math.sin(this.theta),
     );
-    this.camera.lookAt(0, 0, 0);
+    this.camera.lookAt(tx, 0, tz);
     this.renderer.render(this.scene, this.camera);
     const w = this.box.clientWidth;
     const h = this.box.clientHeight;
@@ -322,18 +378,26 @@ export class VmScene {
     }
   }
 
-  // Drag to turn around the map, wheel or pinch to zoom, double-click to come back to the start view.
+  // Drag to turn around the map, right-drag, shift-drag or two fingers to move it, wheel or pinch to zoom,
+  // double-click to come back to the default view.
   // A drag is not a click: the card that shows this one (ha-vacuum-card) only gets the click of a tap.
   _listen() {
     const el = this.renderer.domElement;
     const pointers = new Map();
     let moved = 0;
     let pinch = 0;
+    let mid = null;
+    let panning = false;
+    el.addEventListener('contextmenu', (ev) => ev.preventDefault());
     el.addEventListener('pointerdown', (ev) => {
       pointers.set(ev.pointerId, [ev.clientX, ev.clientY]);
       el.setPointerCapture?.(ev.pointerId);
-      if (pointers.size === 1) moved = 0;
+      if (pointers.size === 1) {
+        moved = 0;
+        panning = ev.button === 2 || ev.shiftKey || ev.ctrlKey || ev.metaKey;
+      }
       pinch = 0;
+      mid = null;
     });
     el.addEventListener('pointermove', (ev) => {
       const last = pointers.get(ev.pointerId);
@@ -345,8 +409,13 @@ export class VmScene {
       if (pointers.size === 2) {
         const [a, b] = [...pointers.values()];
         const d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+        const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
         if (pinch) this.zoom = Math.min(Math.max(this.zoom * (d / pinch), 0.5), 4);
+        if (mid) this._pan(m[0] - mid[0], m[1] - mid[1]);
         pinch = d;
+        mid = m;
+      } else if (panning) {
+        this._pan(dx, dy);
       } else {
         this.theta += dx * 0.008;
         this.phi = Math.min(Math.max(this.phi - dy * 0.006, 0.12), 1.35);
@@ -356,6 +425,7 @@ export class VmScene {
     const up = (ev) => {
       pointers.delete(ev.pointerId);
       pinch = 0;
+      mid = null;
     };
     el.addEventListener('pointerup', up);
     el.addEventListener('pointercancel', up);

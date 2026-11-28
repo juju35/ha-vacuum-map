@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.7.0 - 2026-11-28
+
+### Features
+- 3D view: the camera can be saved and restored (#24). A **Save view** button (bottom right of the 3D view) keeps the current rotation, tilt, zoom and position in this browser, per vacuum and map, and the card opens on it at every load; **Reset view** forgets it. The new `camera_3d` option sets a default view for every device (`rotation`, `tilt`, `zoom`, `pan_x`, `pan_y`); `show_camera_buttons: false` hides the buttons.
+- 3D view: the map can be moved — right-drag, shift-drag or two fingers — besides turning around it and zooming; a double-click comes back to the default view.
+
 ## 1.6.3 - 2026-11-24
 
 ### Maintenance

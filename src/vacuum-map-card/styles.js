@@ -85,4 +85,9 @@ ha-card { padding: 16px; overflow: hidden; container-type: inline-size; }
 .fs { position: absolute; top: 4px; left: 4px; z-index: 2; width: 28px; height: 28px;
   background: color-mix(in srgb, var(--card-background-color, #1c1c1c) 82%, transparent); }
 .fs ha-icon { --mdc-icon-size: 18px; }
+.cam { position: absolute; right: 4px; bottom: 4px; z-index: 2; display: none; gap: 2px; padding: 2px; border-radius: 999px;
+  background: color-mix(in srgb, var(--card-background-color, #1c1c1c) 82%, transparent); }
+.map.is3d .cam { display: flex; }
+.cam .icon-btn { width: 28px; height: 28px; }
+.cam ha-icon { --mdc-icon-size: 18px; }
 `;

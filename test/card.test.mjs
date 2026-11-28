@@ -14,8 +14,8 @@ const context = {
 };
 context.window = context;
 vm.createContext(context);
-vm.runInContext(`${source}\nthis.api = { vmRoomIcon, vmLang, vmT, vmTone, vmEscape, VM_STRINGS, vmIsNight, vmActivity, vmDevice, vmAutoSvg, vmPlace, VM_ROBOROCK_MODELS, vmModelDevice };`, context);
-const { vmRoomIcon, vmLang, vmT, vmTone, vmEscape, VM_STRINGS, vmIsNight, vmActivity, vmDevice, vmAutoSvg, vmPlace, VM_ROBOROCK_MODELS, vmModelDevice } = context.api;
+vm.runInContext(`${source}\nthis.api = { vmRoomIcon, vmLang, vmT, vmTone, vmEscape, VM_STRINGS, vmIsNight, vmActivity, vmDevice, vmAutoSvg, vmPlace, VM_ROBOROCK_MODELS, vmModelDevice, vmCameraView };`, context);
+const { vmRoomIcon, vmLang, vmT, vmTone, vmEscape, VM_STRINGS, vmIsNight, vmActivity, vmDevice, vmAutoSvg, vmPlace, VM_ROBOROCK_MODELS, vmModelDevice, vmCameraView } = context.api;
 
 test('elements and card picker entry are defined once', () => {
   assert.ok(defined['vacuum-map-card']);
@@ -159,4 +159,12 @@ test('hass of another entity: the header is not worked out again', () => {
   card.hass = { ...base, states: { ...base.states, 'vacuum.s': { state: 'returning', attributes: {} } }, themes: { darkMode: true } };
   assert.equal(heads, 3);
   assert.equal(rooms, 3);
+});
+
+test('3D camera views: start view by default, values rounded and kept in range', () => {
+  const view = (v) => ({ ...vmCameraView(v) }); // out of the sandbox's realm
+  assert.deepEqual(view(null), { rotation: 0, tilt: 47, zoom: 1, pan_x: 0, pan_y: 0 });
+  assert.deepEqual(view({ rotation: 200, tilt: 90, zoom: 9, pan_x: -2, pan_y: '0.12345' }), { rotation: -160, tilt: 77, zoom: 4, pan_x: -0.6, pan_y: 0.123 });
+  assert.deepEqual(view({ rotation: 'x', tilt: '', zoom: null }), { rotation: 0, tilt: 47, zoom: 1, pan_x: 0, pan_y: 0 });
+  assert.equal(vmCameraView({ rotation: -190 }).rotation, 170);
 });

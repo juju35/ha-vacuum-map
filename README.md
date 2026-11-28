@@ -57,7 +57,8 @@ The header follows the model of the vacuum, or the one chosen with the `model` o
 - The room being cleaned stands out, the others are dimmed
 - Dock, no-go and no-mop zones, virtual walls and, optionally, obstacles
 - Names too wide for a small room show the icon alone (the name stays as a tooltip)
-- **3D view**: walls raised from the map, floors in their colors, the robot moving on its path; drag to turn around, pinch or wheel to zoom (three.js, loaded only for the 3D view)
+- **3D view**: walls raised from the map, floors in their colors, the robot moving on its path; drag to turn around, right-drag, shift-drag or two fingers to move the map, pinch or wheel to zoom, double-click to come back to the default view (three.js, loaded only for the 3D view)
+- **Saved 3D view**: the save button (bottom right of the 3D view) keeps the current rotation, tilt, zoom and position on this device, restored at every load — handy for a wall tablet; the reset button forgets it. `camera_3d` sets a default view for every device
 - **Illustrated header**: the vacuum drawn in a living room (the same pictures as ha-vacuum-card: robot with or without its dock or Clean Base, by model, or the Roborock model chosen with `model`), animated by its state — out cleaning, sliding back to its dock, docked, error; the icon color follows the state; day and night following the Home Assistant theme
 - **Full screen** button: the map at its largest, in 2D or 3D
 - Rotation by 90° steps, visual editor
@@ -119,6 +120,8 @@ entity: vacuum.saros_20
 | `show_obstacles` | `false` | Obstacles seen by the vacuum |
 | `view` | `2d` | `2d` or `3d`: the view shown when the card opens |
 | `show_view_toggle` | `true` | **2D / 3D** button on the map |
+| `show_camera_buttons` | `true` | **Save view** / **Reset view** buttons on the 3D view: the view saved is kept in this browser, per vacuum and map, and wins over `camera_3d` |
+| `camera_3d` | start view | Default 3D view for every device (YAML only): `rotation` (degrees from the start view), `tilt` (degrees from straight above, 7–77), `zoom` (0.5–4), `pan_x` / `pan_y` (point looked at moved by a fraction of the map width, ±0.6) |
 | `show_fullscreen` | `true` | Full screen button (top left of the map with the illustrated header, in the header otherwise) |
 | `illustration` | `true` | Animated illustrated header: the vacuum (with its dock when it has one) in a living room, its state shown by the icon color and the picture; `false` keeps the classic header |
 | `illustration_theme` | auto | `day` or `night`; `auto` (default) follows the Home Assistant theme: night with a dark theme, day with a light theme |
@@ -131,6 +134,11 @@ entity: vacuum.saros_20
 type: custom:vacuum-map-card
 entity: vacuum.saros_20
 rotation: 90
+camera_3d:
+  rotation: -30
+  tilt: 40
+  zoom: 1.3
+  pan_x: 0.1
 rooms:
   16:
     icon: mdi:bed-king
